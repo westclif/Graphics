@@ -123,6 +123,9 @@ namespace UnityEngine.Rendering.Universal
             private RenderTargetIdentifier m_SSAOTexture1Target = new RenderTargetIdentifier(s_SSAOTexture1ID, 0, CubemapFace.Unknown, -1);
             private RenderTargetIdentifier m_SSAOTexture2Target = new RenderTargetIdentifier(s_SSAOTexture2ID, 0, CubemapFace.Unknown, -1);
             private RenderTargetIdentifier m_SSAOTexture3Target = new RenderTargetIdentifier(s_SSAOTexture3ID, 0, CubemapFace.Unknown, -1);
+            // if downsapling is enabled, use an additional RT at full resolution to perform upsampling in the final blur pass
+            private RenderTargetIdentifier m_SSAOTexture4Target = new RenderTargetIdentifier(s_SSAOTexture4ID, 0, CubemapFace.Unknown, -1);
+
             private RenderTextureDescriptor m_Descriptor;
 
             // Constants
@@ -135,6 +138,7 @@ namespace UnityEngine.Rendering.Universal
             private static readonly int s_SSAOTexture1ID = Shader.PropertyToID("_SSAO_OcclusionTexture1");
             private static readonly int s_SSAOTexture2ID = Shader.PropertyToID("_SSAO_OcclusionTexture2");
             private static readonly int s_SSAOTexture3ID = Shader.PropertyToID("_SSAO_OcclusionTexture3");
+            private static readonly int s_SSAOTexture4ID = Shader.PropertyToID("_SSAO_OcclusionTexture4");
 
             private enum ShaderPasses
             {
@@ -234,14 +238,26 @@ namespace UnityEngine.Rendering.Universal
                 m_Descriptor.colorFormat = RenderTextureFormat.ARGB32;
                 cmd.GetTemporaryRT(s_SSAOTexture1ID, m_Descriptor, FilterMode.Bilinear);
 
-                m_Descriptor.width *= downsampleDivider;
-                m_Descriptor.height *= downsampleDivider;
                 cmd.GetTemporaryRT(s_SSAOTexture2ID, m_Descriptor, FilterMode.Bilinear);
                 cmd.GetTemporaryRT(s_SSAOTexture3ID, m_Descriptor, FilterMode.Bilinear);
 
                 // Configure targets and clear color
                 ConfigureTarget(s_SSAOTexture2ID);
                 ConfigureClear(ClearFlag.None, Color.white);
+
+
+                if (m_CurrentSettings.Downsample)
+                {
+                    m_Descriptor.width *= downsampleDivider;
+                    m_Descriptor.height *= downsampleDivider;
+
+                    cmd.GetTemporaryRT(s_SSAOTexture4ID, m_Descriptor, FilterMode.Bilinear);
+
+                    // Configure targets and clear color
+                    ConfigureTarget(s_SSAOTexture4ID);
+                    ConfigureClear(ClearFlag.None, Color.white);
+                }
+
             }
 
             /// <inheritdoc/>
@@ -265,10 +281,11 @@ namespace UnityEngine.Rendering.Universal
                     // Execute the Blur Passes
                     RenderAndSetBaseMap(cmd, m_SSAOTexture1Target, m_SSAOTexture2Target, ShaderPasses.BlurHorizontal);
                     RenderAndSetBaseMap(cmd, m_SSAOTexture2Target, m_SSAOTexture3Target, ShaderPasses.BlurVertical);
-                    RenderAndSetBaseMap(cmd, m_SSAOTexture3Target, m_SSAOTexture2Target, ShaderPasses.BlurFinal);
+                    // if we are not downsampling, reuse m_SSAOTexture2Target as the BurFinal pass target
+                    RenderAndSetBaseMap(cmd, m_SSAOTexture3Target, m_CurrentSettings.Downsample ? m_SSAOTexture4Target : m_SSAOTexture2Target, ShaderPasses.BlurFinal);
 
                     // Set the global SSAO texture and AO Params
-                    cmd.SetGlobalTexture(k_SSAOTextureName, m_SSAOTexture2Target);
+                    cmd.SetGlobalTexture(k_SSAOTextureName, m_CurrentSettings.Downsample ? m_SSAOTexture4Target: m_SSAOTexture2Target);
                     cmd.SetGlobalVector(k_SSAOAmbientOcclusionParamName, new Vector4(0f, 0f, 0f, m_CurrentSettings.DirectLightingStrength));
                 }
 
@@ -307,6 +324,9 @@ namespace UnityEngine.Rendering.Universal
                 cmd.ReleaseTemporaryRT(s_SSAOTexture1ID);
                 cmd.ReleaseTemporaryRT(s_SSAOTexture2ID);
                 cmd.ReleaseTemporaryRT(s_SSAOTexture3ID);
+
+                if (m_CurrentSettings.Downsample)
+                    cmd.ReleaseTemporaryRT(s_SSAOTexture4ID);
             }
         }
     }
