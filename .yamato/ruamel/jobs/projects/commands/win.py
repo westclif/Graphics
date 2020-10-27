@@ -5,9 +5,9 @@ from ...shared.utr_utils import utr_editmode_flags, utr_playmode_flags, utr_stan
 def _cmd_base(project_folder, platform, utr_flags, editor):
     return [
         f'cd {TEST_PROJECTS_DIR}/{project_folder}/utr_pinning',
-        f'pip install pipenv',
-        f'python -m pipenv install --dev --three',
-        f'pipenv run python -m download_utr -v 3481321',
+        f'pip3 install pipenv',
+        f'python3 -m pipenv install --dev --three',
+        f'pipenv run python3 -m download_utr -v 3481321',
         f'cd ../',
         f'pip install unity-downloader-cli --index-url {UNITY_DOWNLOADER_CLI_URL} --upgrade',
         f'unity-downloader-cli { get_unity_downloader_cli_cmd(editor, platform["os"], cd=True) } {"".join([f"-c {c} " for c in platform["components"]])} --wait --published-only',

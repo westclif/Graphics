@@ -55,9 +55,9 @@ Build_URP_Performance_BoatAttack_Win_DX11_Player_il2cpp_apiNet4_Linear_2020.2:
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
       -  cd TestProjects/BoatAttack/utr_pinning
-      -  pip install pipenv
-      -  python -m pipenv install --dev --three
-      -  pipenv run python -m download_utr -v 3481321
+      -  pip3 install pipenv
+      -  python3 -m pipenv install --dev --three
+      -  pipenv run python3 -m download_utr -v 3481321
       -  cd ../
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli -u dff91d65251a9ab8c12af258ce88fee061d85a7d -c editor -c il2cpp  --wait --published-only
@@ -129,9 +129,9 @@ Build_URP_Performance_BoatAttack_Win_DX11_Player_mono_apiNet2_Linear_2020.2:
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
       -  cd TestProjects/BoatAttack/utr_pinning
-      -  pip install pipenv
-      -  python -m pipenv install --dev --three
-      -  pipenv run python -m download_utr -v 3481321
+      -  pip3 install pipenv
+      -  python3 -m pipenv install --dev --three
+      -  pipenv run python3 -m download_utr -v 3481321
       -  cd ../
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli -u dff91d65251a9ab8c12af258ce88fee061d85a7d -c editor -c il2cpp  --wait --published-only
@@ -207,9 +207,9 @@ Build_URP_Performance_BoatAttack_Win_DX11_Player_il2cpp_apiNet4_Linear_CUSTOM-RE
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
       -  cd TestProjects/BoatAttack/utr_pinning
-      -  pip install pipenv
-      -  python -m pipenv install --dev --three
-      -  pipenv run python -m download_utr -v 3481321
+      -  pip3 install pipenv
+      -  python3 -m pipenv install --dev --three
+      -  pipenv run python3 -m download_utr -v 3481321
       -  cd ../
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli --source-file ../../unity_revision.txt -c editor -c il2cpp  --wait --published-only
@@ -288,9 +288,9 @@ Build_URP_Performance_BoatAttack_Win_DX11_Player_mono_apiNet2_Linear_CUSTOM-REVI
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
       -  cd TestProjects/BoatAttack/utr_pinning
-      -  pip install pipenv
-      -  python -m pipenv install --dev --three
-      -  pipenv run python -m download_utr -v 3481321
+      -  pip3 install pipenv
+      -  python3 -m pipenv install --dev --three
+      -  pipenv run python3 -m download_utr -v 3481321
       -  cd ../
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli --source-file ../../unity_revision.txt -c editor -c il2cpp  --wait --published-only
