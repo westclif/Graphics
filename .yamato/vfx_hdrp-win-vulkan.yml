@@ -32,6 +32,7 @@ Build_VFX_HDRP_Win_Vulkan_Player_mono_apiNet2_Linear_2020.2:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
       -  cd TestProjects/VisualEffectGraph_HDRP/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -63,6 +64,7 @@ VFX_HDRP_Win_Vulkan_playmode_mono_apiNet2_Linear_2020.2:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
       -  cd TestProjects/VisualEffectGraph_HDRP/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -91,6 +93,7 @@ VFX_HDRP_Win_Vulkan_playmode_XR_mono_apiNet2_Linear_2020.2:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
       -  cd TestProjects/VisualEffectGraph_HDRP/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -119,6 +122,7 @@ VFX_HDRP_Win_Vulkan_editmode_mono_apiNet2_Linear_2020.2:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
       -  cd TestProjects/VisualEffectGraph_HDRP/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -170,6 +174,7 @@ Build_VFX_HDRP_Win_Vulkan_Player_mono_apiNet2_Linear_CUSTOM-REVISION:
         CUSTOM_REVISION: custom_revision_not_set
     commands:
       -  cd TestProjects/VisualEffectGraph_HDRP/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -205,6 +210,7 @@ VFX_HDRP_Win_Vulkan_playmode_mono_apiNet2_Linear_CUSTOM-REVISION:
         CUSTOM_REVISION: custom_revision_not_set
     commands:
       -  cd TestProjects/VisualEffectGraph_HDRP/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -237,6 +243,7 @@ VFX_HDRP_Win_Vulkan_playmode_XR_mono_apiNet2_Linear_CUSTOM-REVISION:
         CUSTOM_REVISION: custom_revision_not_set
     commands:
       -  cd TestProjects/VisualEffectGraph_HDRP/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -269,6 +276,7 @@ VFX_HDRP_Win_Vulkan_editmode_mono_apiNet2_Linear_CUSTOM-REVISION:
         CUSTOM_REVISION: custom_revision_not_set
     commands:
       -  cd TestProjects/VisualEffectGraph_HDRP/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../

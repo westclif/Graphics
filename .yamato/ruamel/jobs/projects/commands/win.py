@@ -5,6 +5,7 @@ from ...shared.utr_utils import utr_editmode_flags, utr_playmode_flags, utr_stan
 def _cmd_base(project_folder, platform, utr_flags, editor):
     return [
         f'cd {TEST_PROJECTS_DIR}/{project_folder}/utr_pinning',
+        f'pip install pipenv',
         f'python -m pipenv install --dev --three',
         f'pipenv run python -m download_utr -v 3481321',
         f'cd ../',

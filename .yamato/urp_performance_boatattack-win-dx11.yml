@@ -55,6 +55,7 @@ Build_URP_Performance_BoatAttack_Win_DX11_Player_il2cpp_apiNet4_Linear_2020.2:
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
       -  cd TestProjects/BoatAttack/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -128,6 +129,7 @@ Build_URP_Performance_BoatAttack_Win_DX11_Player_mono_apiNet2_Linear_2020.2:
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
       -  cd TestProjects/BoatAttack/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -205,6 +207,7 @@ Build_URP_Performance_BoatAttack_Win_DX11_Player_il2cpp_apiNet4_Linear_CUSTOM-RE
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
       -  cd TestProjects/BoatAttack/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
@@ -285,6 +288,7 @@ Build_URP_Performance_BoatAttack_Win_DX11_Player_mono_apiNet2_Linear_CUSTOM-REVI
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
       -  cd TestProjects/BoatAttack/utr_pinning
+      -  pip install pipenv
       -  python -m pipenv install --dev --three
       -  pipenv run python -m download_utr -v 3481321
       -  cd ../
