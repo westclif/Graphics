@@ -12,7 +12,7 @@ HDRP_Hybrid_OSX_Metal_playmode_mono_apiNet2_Linear_2020.2:
     variables:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr --output TestProjects/HDRP_HybridTests/utr
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging --output TestProjects/HDRP_HybridTests/utr
       -  chmod +x TestProjects/HDRP_HybridTests/utr
       -  ssh -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" bokken@$BOKKEN_DEVICE_IP "bash -lc 'pip3 install unity-downloader-cli --user --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade'"
       -  scp -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" -r $YAMATO_SOURCE_DIR bokken@$BOKKEN_DEVICE_IP:~/Graphics
@@ -39,7 +39,7 @@ HDRP_Hybrid_OSX_Metal_playmode_XR_mono_apiNet2_Linear_2020.2:
     variables:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr --output TestProjects/HDRP_HybridTests/utr
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging --output TestProjects/HDRP_HybridTests/utr
       -  chmod +x TestProjects/HDRP_HybridTests/utr
       -  ssh -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" bokken@$BOKKEN_DEVICE_IP "bash -lc 'pip3 install unity-downloader-cli --user --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade'"
       -  scp -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" -r $YAMATO_SOURCE_DIR bokken@$BOKKEN_DEVICE_IP:~/Graphics
@@ -66,7 +66,7 @@ HDRP_Hybrid_OSX_Metal_Standalone_mono_apiNet2_Linear_2020.2:
     variables:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr --output TestProjects/HDRP_HybridTests/utr
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging --output TestProjects/HDRP_HybridTests/utr
       -  chmod +x TestProjects/HDRP_HybridTests/utr
       -  ssh -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" bokken@$BOKKEN_DEVICE_IP "bash -lc 'pip3 install unity-downloader-cli --user --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade'"
       -  scp -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" -r $YAMATO_SOURCE_DIR bokken@$BOKKEN_DEVICE_IP:~/Graphics
@@ -94,7 +94,7 @@ HDRP_Hybrid_OSX_Metal_playmode_mono_apiNet2_Linear_CUSTOM-REVISION:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
         CUSTOM_REVISION: custom_revision_not_set
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr --output TestProjects/HDRP_HybridTests/utr
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging --output TestProjects/HDRP_HybridTests/utr
       -  chmod +x TestProjects/HDRP_HybridTests/utr
       -  ssh -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" bokken@$BOKKEN_DEVICE_IP "bash -lc 'pip3 install unity-downloader-cli --user --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade'"
       -  scp -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" -r $YAMATO_SOURCE_DIR bokken@$BOKKEN_DEVICE_IP:~/Graphics
@@ -125,7 +125,7 @@ HDRP_Hybrid_OSX_Metal_playmode_XR_mono_apiNet2_Linear_CUSTOM-REVISION:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
         CUSTOM_REVISION: custom_revision_not_set
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr --output TestProjects/HDRP_HybridTests/utr
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging --output TestProjects/HDRP_HybridTests/utr
       -  chmod +x TestProjects/HDRP_HybridTests/utr
       -  ssh -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" bokken@$BOKKEN_DEVICE_IP "bash -lc 'pip3 install unity-downloader-cli --user --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade'"
       -  scp -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" -r $YAMATO_SOURCE_DIR bokken@$BOKKEN_DEVICE_IP:~/Graphics
@@ -156,7 +156,7 @@ HDRP_Hybrid_OSX_Metal_Standalone_mono_apiNet2_Linear_CUSTOM-REVISION:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
         CUSTOM_REVISION: custom_revision_not_set
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr --output TestProjects/HDRP_HybridTests/utr
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging --output TestProjects/HDRP_HybridTests/utr
       -  chmod +x TestProjects/HDRP_HybridTests/utr
       -  ssh -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" bokken@$BOKKEN_DEVICE_IP "bash -lc 'pip3 install unity-downloader-cli --user --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade'"
       -  scp -i ~/.ssh/id_rsa_macmini -o "StrictHostKeyChecking=no" -r $YAMATO_SOURCE_DIR bokken@$BOKKEN_DEVICE_IP:~/Graphics

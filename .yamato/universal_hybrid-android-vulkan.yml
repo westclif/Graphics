@@ -12,7 +12,7 @@ Universal_Hybrid_Android_Vulkan_Standalone_mono_apiNet2_Linear_2020.2:
     variables:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  '%ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%'
       -  powershell %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
       -  NetSh Advfirewall set allprofiles state off
@@ -38,7 +38,7 @@ Build_Universal_Hybrid_Android_Vulkan_Player_mono_apiNet2_Linear_2020.2:
     variables:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli -u dff91d65251a9ab8c12af258ce88fee061d85a7d -p WindowsEditor -c editor -c il2cpp -c android  --wait --published-only
       -  NetSh Advfirewall set allprofiles state off
@@ -67,7 +67,7 @@ Universal_Hybrid_Android_Vulkan_Standalone_mono_apiNet2_Linear_CUSTOM-REVISION:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
         CUSTOM_REVISION: custom_revision_not_set
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  '%ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%'
       -  powershell %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
       -  NetSh Advfirewall set allprofiles state off
@@ -96,7 +96,7 @@ Build_Universal_Hybrid_Android_Vulkan_Player_mono_apiNet2_Linear_CUSTOM-REVISION
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
         CUSTOM_REVISION: custom_revision_not_set
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli --source-file unity_revision.txt -p WindowsEditor -c editor -c il2cpp -c android  --wait --published-only
       -  NetSh Advfirewall set allprofiles state off

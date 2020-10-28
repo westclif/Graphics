@@ -12,7 +12,7 @@ URP_Performance_BoatAttack_Android_OpenGLES3_performance_playmode_runtime_il2cpp
     variables:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  '%ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%'
       -  powershell %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
       -  NetSh Advfirewall set allprofiles state off
@@ -60,7 +60,7 @@ Build_URP_Performance_BoatAttack_Android_OpenGLES3_Player_il2cpp_apiNet4_Linear_
       -  cd TestProjects/BoatAttack && unity-config project add testable com.unity.render-pipelines.core  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli -u dff91d65251a9ab8c12af258ce88fee061d85a7d -p WindowsEditor -c editor -c il2cpp -c android  --wait --published-only
       -  NetSh Advfirewall set allprofiles state off
@@ -88,7 +88,7 @@ URP_Performance_BoatAttack_Android_OpenGLES3_performance_playmode_runtime_mono_a
     variables:
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  '%ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%'
       -  powershell %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
       -  NetSh Advfirewall set allprofiles state off
@@ -136,7 +136,7 @@ Build_URP_Performance_BoatAttack_Android_OpenGLES3_Player_mono_apiNet2_Linear_20
       -  cd TestProjects/BoatAttack && unity-config project add testable com.unity.render-pipelines.core  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli -u dff91d65251a9ab8c12af258ce88fee061d85a7d -p WindowsEditor -c editor -c il2cpp -c android  --wait --published-only
       -  NetSh Advfirewall set allprofiles state off
@@ -165,7 +165,7 @@ URP_Performance_BoatAttack_Android_OpenGLES3_performance_playmode_runtime_il2cpp
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
         CUSTOM_REVISION: custom_revision_not_set
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  '%ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%'
       -  powershell %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
       -  NetSh Advfirewall set allprofiles state off
@@ -216,7 +216,7 @@ Build_URP_Performance_BoatAttack_Android_OpenGLES3_Player_il2cpp_apiNet4_Linear_
       -  cd TestProjects/BoatAttack && unity-config project add testable com.unity.render-pipelines.core  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli --source-file unity_revision.txt -p WindowsEditor -c editor -c il2cpp -c android  --wait --published-only
       -  NetSh Advfirewall set allprofiles state off
@@ -248,7 +248,7 @@ URP_Performance_BoatAttack_Android_OpenGLES3_performance_playmode_runtime_mono_a
         UPM_REGISTRY: https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-candidates
         CUSTOM_REVISION: custom_revision_not_set
     commands:
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  '%ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%'
       -  powershell %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
       -  NetSh Advfirewall set allprofiles state off
@@ -299,7 +299,7 @@ Build_URP_Performance_BoatAttack_Android_OpenGLES3_Player_mono_apiNet2_Linear_CU
       -  cd TestProjects/BoatAttack && unity-config project add testable com.unity.render-pipelines.core  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project add testable unity.graphictests.performance.universal  --project-path .
       -  cd TestProjects/BoatAttack && unity-config project set project-update false --project-path .
-      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr.bat --output utr.bat
+      -  curl -s https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging.bat --output utr.bat
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
       -  unity-downloader-cli --source-file unity_revision.txt -p WindowsEditor -c editor -c il2cpp -c android  --wait --published-only
       -  NetSh Advfirewall set allprofiles state off

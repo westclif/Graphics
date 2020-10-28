@@ -10,12 +10,11 @@ PATH_UNITY_REVISION = 'unity_revision.txt'
 PATH_PLAYERS_padded = 'players/**'
 PATH_PLAYERS = 'players'
 NPM_UPMCI_INSTALL_URL = 'https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm'
-UTR_INSTALL_URL = 'https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr'
+UTR_INSTALL_URL = 'https://artifactory.internal.unity3d.com/core-automation/tools/utr-standalone/utr-staging'
 UNITY_DOWNLOADER_CLI_URL = 'https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple'
 VAR_CUSTOM_REVISION = '$CUSTOM_REVISION'
 GITHUB_CDS_URL = 'https://github.cds.internal.unity3d.com'
 DEFAULT_TIMEOUT = 1200
-
 
 
 def get_editor_revision(editor, platform_os):
@@ -27,7 +26,7 @@ def get_editor_revision(editor, platform_os):
         return editor["revisions"][f"{editor['track']}_staging"][platform_os]["revision"]
 
 def get_unity_downloader_cli_cmd(editor, platform_os, cd=False, git_root=False):
-    '''Returns the revision used by unity-downloader-cli. 
+    '''Returns the revision used by unity-downloader-cli.
     For custom revision, refers to --source-file flag. If cd, then revision file path is prepended by ../../; if git_root, then its prepended by ~/Graphics/.
     For normal tracks (not custom revision), retrieves the editor revision from latest_editor_versions file'''
     if not editor["editor_pinning"]:
@@ -43,7 +42,7 @@ def get_unity_downloader_cli_cmd(editor, platform_os, cd=False, git_root=False):
 def get_timeout(test_platform, os_name, build=False):
     '''Returns default timeout if testplatform does not specify otherwise.
     If testplatform has timeout specified as single integer, then returns this for all possible os.
-    If testplatform has timeout specified per os, then returns timeout value specified for this os 
+    If testplatform has timeout specified per os, then returns timeout value specified for this os
     OR default timeout if os-specific not present.'''
     key = 'timeout' if not build else 'timeout_build'
 
