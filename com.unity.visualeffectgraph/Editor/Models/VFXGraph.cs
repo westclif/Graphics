@@ -94,38 +94,36 @@ namespace UnityEditor.VFX
     }
     class VFXCacheManager : EditorWindow
     {
-        private static List<VisualEffectObject> GetAllVisualEffectObjects()
+        private static List<VisualEffectAsset> GetAllVisualEffectAssets()
         {
-            var vfxObjects = new List<VisualEffectObject>();
-            var vfxObjectsGuid = AssetDatabase.FindAssets("t:VisualEffectObject");
-            foreach (var guid in vfxObjectsGuid)
+            var vfxAssets = new List<VisualEffectAsset>();
+            var vfxAssetsGuid = AssetDatabase.FindAssets("t:VisualEffectAsset");
+            foreach (var guid in vfxAssetsGuid)
             {
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                var vfxObj = AssetDatabase.LoadAssetAtPath<VisualEffectObject>(assetPath);
-                if (vfxObj != null)
+                var vfxAsset = AssetDatabase.LoadAssetAtPath<VisualEffectAsset>(assetPath);
+                if (vfxAsset != null)
                 {
-                    vfxObjects.Add(vfxObj);
+                    vfxAssets.Add(vfxAsset);
                 }
             }
-            return vfxObjects;
+            return vfxAssets;
         }
 
         [MenuItem("Edit/Visual Effects//Rebuild And Save All Visual Effect Graphs", priority = 320)]
         public static void Build()
         {
-            var vfxObjects = GetAllVisualEffectObjects();
+            var vfxAssets = GetAllVisualEffectAssets();
 
-            foreach (var vfxObj in vfxObjects)
+            foreach (var vfxAsset in vfxAssets)
             {
                 if (VFXViewPreference.advancedLogs)
-                    Debug.Log(string.Format("Recompile VFX asset: {0} ({1})", vfxObj, AssetDatabase.GetAssetPath(vfxObj)));
+                    Debug.Log(string.Format("Recompile VFX asset: {0} ({1})", vfxAsset, AssetDatabase.GetAssetPath(vfxAsset)));
 
-                var resource = vfxObj.GetResource();
+                var resource = vfxAsset.GetResource();
                 if (resource != null)
                 {
-                    VFXGraph graph = resource.GetOrCreateGraph();
-                    graph.SanitizeGraph(); // tmp Necessary for subgraphs
-                    AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(graph));
+                    resource.GetOrCreateGraph().SanitizeGraph();
                     EditorUtility.SetDirty(resource);
                 }
             }
