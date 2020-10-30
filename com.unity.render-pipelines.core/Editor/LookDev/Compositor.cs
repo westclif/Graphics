@@ -130,6 +130,7 @@ namespace UnityEditor.Rendering.LookDev
             }
         }
 
+        IDataProvider m_DataProvider;
         IViewDisplayer m_Displayer;
         Context m_Contexts;
         RenderTextureCache m_RenderTextures = new RenderTextureCache();
@@ -155,6 +156,7 @@ namespace UnityEditor.Rendering.LookDev
             IDataProvider dataProvider,
             StageCache stages)
         {
+            m_DataProvider = dataProvider;
             m_Displayer = displayer;
             m_Contexts = contexts;
 
@@ -251,7 +253,7 @@ namespace UnityEditor.Rendering.LookDev
                 RenderTexture tmp = m_RenderTextures[index, ShadowCompositionPass.ShadowMask];
                 view.environment?.UpdateSunPosition(renderingData.stage.sunLight);
                 renderingData.stage.sunLight.intensity = 1f;
-                LookDev.dataProvider.GetShadowMask(ref tmp, renderingData.stage.runtimeInterface);
+                m_DataProvider.GetShadowMask(ref tmp, renderingData.stage.runtimeInterface);
                 renderingData.stage.sunLight.intensity = 0f;
                 m_RenderTextures[index, ShadowCompositionPass.ShadowMask] = tmp;
             }
