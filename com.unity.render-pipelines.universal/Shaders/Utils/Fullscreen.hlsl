@@ -48,9 +48,4 @@ Varyings FullscreenVert(Attributes input)
     return output;
 }
 
-Varyings Vert(Attributes input)
-{
-    return FullscreenVert(input);
-}
-
 #endif
