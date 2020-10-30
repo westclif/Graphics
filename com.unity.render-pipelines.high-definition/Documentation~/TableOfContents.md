@@ -145,8 +145,6 @@
     * [Authoring in Adobe Photoshop](LUT-Authoring-Photoshop)
     * [Authoring in DaVinci Resolve](LUT-Authoring-Resolve)
   * [Propagating NaNs](Post-Processing-Propagating-NaNs)
-* UI
-  * [UI Best Pratices](UI-Best-Practices)
 * Ray Tracing
   * [Getting Started with Ray Tracing](Ray-Tracing-Getting-Started)
   * Effects and Volume Overrides
