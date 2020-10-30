@@ -844,7 +844,6 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
 
         public static DefineCollection Forward = new DefineCollection
         {
-            { CoreKeywordDescriptors.SupportBlendModePreserveSpecularLighting, 1 },
             { CoreKeywordDescriptors.HasLightloop, 1 },
             { RayTracingQualityNode.GetRayTracingQualityKeyword(), 0 },
         };
@@ -856,7 +855,6 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
 
         public static DefineCollection BackThenFront = new DefineCollection
         {
-            { CoreKeywordDescriptors.SupportBlendModePreserveSpecularLighting, 1 },
             { CoreKeywordDescriptors.HasLightloop, 1 },
             { RayTracingQualityNode.GetRayTracingQualityKeyword(), 0 },
             // { CoreKeywordDescriptors.LightList, 1 }, // BackThenFront Transparent use #define USE_CLUSTERED_LIGHTLIST 
@@ -1290,13 +1288,13 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
             scope = KeywordScope.Local,
         };
 
-        public static KeywordDescriptor SupportBlendModePreserveSpecularLighting = new KeywordDescriptor
+        public static KeywordDescriptor BlendModePreserveSpecularLighting = new KeywordDescriptor
         {
             displayName = "BlendMode Preserve Specular Lighting",
-            referenceName = "SUPPORT_BLENDMODE_PRESERVE_SPECULAR_LIGHTING",
+            referenceName = "_BLENDMODE_PRESERVE_SPECULAR_LIGHTING",
             type = KeywordType.Boolean,
-            definition = KeywordDefinition.Predefined,
-            scope = KeywordScope.Global,
+            definition = KeywordDefinition.ShaderFeature,
+            scope = KeywordScope.Local,
         };
 
         public static KeywordDescriptor AddPrecomputedVelocity = new KeywordDescriptor

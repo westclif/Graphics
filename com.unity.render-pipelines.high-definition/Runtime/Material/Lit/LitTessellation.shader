@@ -298,6 +298,7 @@ Shader "HDRP/LitTessellation"
 
     // Keyword for transparent
     #pragma shader_feature _SURFACE_TYPE_TRANSPARENT
+    #pragma shader_feature_local _BLENDMODE_PRESERVE_SPECULAR_LIGHTING
     #pragma shader_feature_local _ENABLE_FOG_ON_TRANSPARENT
 
     // MaterialFeature are used as shader feature to allow compiler to optimize properly
@@ -321,8 +322,6 @@ Shader "HDRP/LitTessellation"
     //-------------------------------------------------------------------------------------
 
     #define TESSELLATION_ON
-
-    #define SUPPORT_BLENDMODE_PRESERVE_SPECULAR_LIGHTING
 
     // This shader support vertex modification
     #define HAVE_VERTEX_MODIFICATION
