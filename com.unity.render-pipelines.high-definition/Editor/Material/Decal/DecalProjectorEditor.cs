@@ -50,14 +50,12 @@ namespace UnityEditor.Rendering.HighDefinition
             {
                 if (targets.Length < 2)
                     return false;
-                DecalProjector decalProjector0 = (targets[0] as DecalProjector);
-                bool show = decalProjector0.material != null && DecalSystem.IsHDRenderPipelineDecal(decalProjector0.material.shader);
+                bool show = DecalSystem.IsHDRenderPipelineDecal((targets[0] as DecalProjector).material.shader);
                 for (int index = 0; index < targets.Length; ++index)
                 {
                     if ((targets[index] as DecalProjector).material != null)
                     {
-                        DecalProjector decalProjectori = (targets[index] as DecalProjector);
-                        if (decalProjectori != null && DecalSystem.IsHDRenderPipelineDecal(decalProjectori.material.shader) ^ show)
+                        if (DecalSystem.IsHDRenderPipelineDecal((targets[index] as DecalProjector).material.shader) ^ show)
                             return true;
                     }
                 }
