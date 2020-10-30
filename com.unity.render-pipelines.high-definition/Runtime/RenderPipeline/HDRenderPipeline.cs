@@ -2054,6 +2054,8 @@ namespace UnityEngine.Rendering.HighDefinition
                         {
                             RTHandle exposureTexture = GetExposureTexture(hdCamera);
                             visibleProbe.RequestProbeExposureValue(exposureTexture);
+                            // If the planar is under exposure control, all the pixels will be de-exposed, for the other skies it is handeled in a shader.
+                            // For the clear color, we need to do it manually here.
                             additionalCameraData.backgroundColorHDR = additionalCameraData.backgroundColorHDR * visibleProbe.ProbeExposureValue();
                         }
 
