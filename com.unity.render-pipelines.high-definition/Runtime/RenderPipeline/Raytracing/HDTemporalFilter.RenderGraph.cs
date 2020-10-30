@@ -34,7 +34,6 @@ namespace UnityEngine.Rendering.HighDefinition
                 passData.depthStencilBuffer = builder.ReadTexture(depthPyramid);
                 passData.normalBuffer = builder.ReadTexture(normalBuffer);
                 passData.motionVectorBuffer = builder.ReadTexture(motionVectorBuffer);
-
                 passData.velocityBuffer = renderGraph.defaultResources.blackTextureXR;
                 passData.noisyBuffer = builder.ReadTexture(noisyBuffer);
 
@@ -124,7 +123,6 @@ namespace UnityEngine.Rendering.HighDefinition
                 passData.depthStencilBuffer = builder.ReadTexture(depthBuffer);
                 passData.normalBuffer = builder.ReadTexture(normalBuffer);
                 passData.motionVectorBuffer = builder.ReadTexture(motionVectorBuffer);
-
                 passData.velocityBuffer = builder.ReadTexture(velocityBuffer);
                 passData.noisyBuffer = builder.ReadTexture(noisyBuffer);
                 passData.distanceBuffer = distanceBased ? builder.ReadTexture(distanceBuffer) : renderGraph.defaultResources.blackTextureXR;

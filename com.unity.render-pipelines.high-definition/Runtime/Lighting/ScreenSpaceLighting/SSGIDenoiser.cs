@@ -313,7 +313,6 @@ namespace UnityEngine.Rendering.HighDefinition
                 passData.normalBuffer = builder.ReadTexture(normalBuffer);
                 passData.motionVectorsBuffer = builder.ReadTexture(motionVectorsBuffer);
 
-
                 // History buffer
                 bool historyRequireClear = false;
                 RTHandle indirectDiffuseHistory0 = RequestIndirectDiffuseHistory0(hdCamera, out historyRequireClear);

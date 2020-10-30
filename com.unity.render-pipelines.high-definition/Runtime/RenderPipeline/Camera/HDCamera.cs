@@ -417,7 +417,7 @@ namespace UnityEngine.Rendering.HighDefinition
         {
             var ssr = volumeStack.GetComponent<ScreenSpaceReflection>();
             if (!transparent)
-                return frameSettings.IsEnabled(FrameSettingsField.SSR) && ssr.enabled.value && frameSettings.IsEnabled(FrameSettingsField.OpaqueObjects);
+                return frameSettings.IsEnabled(FrameSettingsField.SSR) && ssr.enabled.value;
             else
                 return frameSettings.IsEnabled(FrameSettingsField.TransparentSSR) && ssr.enabled.value;
         }

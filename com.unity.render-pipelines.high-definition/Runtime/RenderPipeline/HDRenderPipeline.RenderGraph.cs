@@ -153,15 +153,12 @@ namespace UnityEngine.Rendering.HighDefinition
                 if (aovRequest.isValid)
                     aovRequest.PushCameraTexture(m_RenderGraph, AOVBuffers.Normals, hdCamera, prepassOutput.resolvedNormalBuffer, aovBuffers);
 
-                if (hdCamera.frameSettings.IsEnabled(FrameSettingsField.SubsurfaceScattering))
-                {
-                    lightingBuffers.diffuseLightingBuffer = ResolveMSAAColor(m_RenderGraph, hdCamera, lightingBuffers.diffuseLightingBuffer);
-                    lightingBuffers.sssBuffer = ResolveMSAAColor(m_RenderGraph, hdCamera, lightingBuffers.sssBuffer);
-                }
+                lightingBuffers.diffuseLightingBuffer = ResolveMSAAColor(m_RenderGraph, hdCamera, lightingBuffers.diffuseLightingBuffer);
+                lightingBuffers.sssBuffer = ResolveMSAAColor(m_RenderGraph, hdCamera, lightingBuffers.sssBuffer);
 
                 // If ray tracing is enabled for the camera, if the volume override is active and if the RAS is built, we want to do ray traced SSS
                 var settings = hdCamera.volumeStack.GetComponent<SubSurfaceScattering>();
-                if (hdCamera.frameSettings.IsEnabled(FrameSettingsField.RayTracing) && settings.rayTracing.value && GetRayTracingState() && hdCamera.frameSettings.IsEnabled(FrameSettingsField.SubsurfaceScattering))
+                if (hdCamera.frameSettings.IsEnabled(FrameSettingsField.RayTracing) && settings.rayTracing.value && GetRayTracingState())
                 {
                     colorBuffer = RenderSubsurfaceScatteringRT(m_RenderGraph, hdCamera,
                                     prepassOutput.depthBuffer, prepassOutput.normalBuffer, colorBuffer,
@@ -1015,17 +1012,8 @@ namespace UnityEngine.Rendering.HighDefinition
                 builder.AllowPassCulling(false);
 
                 passData.parameters = parameters;
-
-                if (!hdCamera.frameSettings.IsEnabled(FrameSettingsField.OpaqueObjects))
-                {
-                    passData.normalBuffer = renderGraph.defaultResources.blackTextureXR;
-                    passData.depthBuffer = renderGraph.defaultResources.blackTextureXR;
-                }
-                else
-                {
-                    passData.normalBuffer = builder.ReadTexture(normalBuffer);
-                    passData.depthBuffer = builder.ReadTexture(depthBuffer);
-                }
+                passData.normalBuffer = builder.ReadTexture(normalBuffer);
+                passData.depthBuffer = builder.ReadTexture(depthBuffer);
 
                 builder.SetRenderFunc(
                 (SendGeometryBuffersPassData data, RenderGraphContext ctx) =>
