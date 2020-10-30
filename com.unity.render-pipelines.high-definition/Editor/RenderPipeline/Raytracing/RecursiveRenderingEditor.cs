@@ -1,5 +1,4 @@
 using UnityEditor.Rendering;
-using UnityEditor.Rendering.HighDefinition;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.Rendering;
 
@@ -43,13 +42,12 @@ namespace UnityEditor.Experimental.Rendering.HighDefinition
 
                 if (m_Enable.overrideState.boolValue && m_Enable.value.boolValue)
                 {
-                    using (new HDEditorUtils.IndentScope())
-                    {
-                        PropertyField(m_LayerMask);
-                        PropertyField(m_MaxDepth);
-                        PropertyField(m_RayLength);
-                        PropertyField(m_MinSmoothness);
-                    }
+                    EditorGUI.indentLevel++;
+                    PropertyField(m_LayerMask);
+                    PropertyField(m_MaxDepth);
+                    PropertyField(m_RayLength);
+                    PropertyField(m_MinSmoothness);
+                    EditorGUI.indentLevel--;
                 }
             }
         }

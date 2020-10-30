@@ -118,19 +118,17 @@ namespace UnityEditor.Rendering.HighDefinition
             else
             {
                 PropertyField(m_SphericalMode);
-
-                using (new HDEditorUtils.IndentScope())
+                EditorGUI.indentLevel++;
+                bool isSpherical = !m_SphericalMode.overrideState.boolValue || m_SphericalMode.value.boolValue;
+                if (isSpherical)
                 {
-                    bool isSpherical = !m_SphericalMode.overrideState.boolValue || m_SphericalMode.value.boolValue;
-                    if (isSpherical)
-                    {
-                        PropertyField(m_PlanetCenterPosition);
-                        if (type == PhysicallyBasedSkyModel.Custom)
-                            PropertyField(m_PlanetaryRadius);
-                    }
-                    else
-                        PropertyField(m_SeaLevel);
+                    PropertyField(m_PlanetCenterPosition);
+                    if (type == PhysicallyBasedSkyModel.Custom)
+                        PropertyField(m_PlanetaryRadius);
                 }
+                else
+                    PropertyField(m_SeaLevel);
+                EditorGUI.indentLevel--;
 
                 PropertyField(m_PlanetRotation);
                 PropertyField(m_GroundColorTexture);
