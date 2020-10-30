@@ -580,10 +580,7 @@ namespace UnityEditor.VFX.UI
                 return DropdownMenuAction.Status.Normal;
         }
 
-        [NonSerialized]
         Dictionary<VFXModel, List<IconBadge>> m_InvalidateBadges = new Dictionary<VFXModel, List<IconBadge>>();
-
-        [NonSerialized]
         List<IconBadge> m_CompileBadges = new List<IconBadge>();
 
         private void RegisterError(VFXModel model, VFXErrorOrigin errorOrigin,string error,VFXErrorType type, string description)
@@ -610,20 +607,14 @@ namespace UnityEditor.VFX.UI
             }
             else if (model is IVFXSlotContainer)
             {
-                var node = model;
-                var nodeController = controller.GetNodeController(node, 0);
+                var context = model;
+                var nodeController = controller.GetNodeController(context, 0);
                 if (nodeController == null)
                     return;
                 target = GetNodeByController(nodeController);
                 if (target == null)
                     return;
-                if (nodeController is VFXBlockController blkController)
-                {
-                    VFXNodeUI targetContext = GetNodeByController(blkController.contextController);
-                    if (targetContext == null)
-                        return;
-                    targetParent = targetContext.parent;
-                }
+                targetParent = target.parent;
                 target = (target as VFXNodeUI).titleContainer;
                 alignement = SpriteAlignment.LeftCenter;
             }
@@ -691,7 +682,7 @@ namespace UnityEditor.VFX.UI
             }
             else
             {
-                if (!object.ReferenceEquals(model,null))
+                if (model != null)
                 {
                     List<IconBadge> badges;
                     if (m_InvalidateBadges.TryGetValue(model, out badges))
@@ -705,7 +696,17 @@ namespace UnityEditor.VFX.UI
                     }
                 }
                 else
-                    throw new InvalidOperationException("Can't clear in Invalidate mode without a model");
+                {
+                    foreach( var badges in m_InvalidateBadges.Values)
+                    {
+                        foreach (var badge in badges)
+                        {
+                            badge.Detach();
+                            badge.RemoveFromHierarchy();
+                        }
+                    }
+                    m_InvalidateBadges.Clear();
+                }
 
             }
         }

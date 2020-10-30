@@ -205,14 +205,7 @@ namespace UnityEditor.VFX.UI
                         while (m_CurrentActions.Count > 0)
                         {
                             var action = m_CurrentActions[m_CurrentActions.Count - 1];
-                            try
-                            {
-                                action();
-                            }
-                            catch(Exception e)
-                            {
-                                Debug.LogException(e);
-                            }
+                            action();
                             cpt++;
                             m_CurrentActions.RemoveAt(m_CurrentActions.Count - 1);
                         }

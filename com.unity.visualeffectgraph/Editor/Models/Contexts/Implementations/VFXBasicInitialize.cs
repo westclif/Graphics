@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,21 +5,7 @@ using UnityEngine.VFX;
 
 namespace UnityEditor.VFX
 {
-    class InitializeVariantProvider : VariantProvider
-    {
-        protected override sealed Dictionary<string, object[]> variants
-        {
-            get
-            {
-                return new Dictionary<string, object[]>
-                {
-                    { "dataType", Enum.GetValues(typeof(VFXDataParticle.DataType)).Cast<object>().ToArray() }
-                };
-            }
-        }
-    }
-
-    [VFXInfo(variantProvider = typeof(InitializeVariantProvider))]
+    [VFXInfo]
     class VFXBasicInitialize : VFXContext
     {
         public VFXBasicInitialize() : base(VFXContextType.Init, VFXDataType.SpawnEvent, VFXDataType.None) {}

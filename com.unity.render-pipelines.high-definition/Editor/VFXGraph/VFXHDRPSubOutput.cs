@@ -46,7 +46,7 @@ namespace UnityEditor.VFX
             }
         }
 
-        public override void OnSettingModified(VFXSetting setting)
+        protected override void OnSettingModified(VFXSetting setting)
         {
             base.OnSettingModified(setting);
             // Reset to default if render queue is invalid
