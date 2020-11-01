@@ -30,12 +30,6 @@ namespace UnityEditor.Experimental.Rendering.Universal
             return new Bounds(shadowCaster.transform.position, Vector3.one);
         }
 
-
-        public override int GetMinimumPointCount()
-        {
-            return 4;
-        }
-
         public override void SetDefaultShape()
         {
             Clear();
