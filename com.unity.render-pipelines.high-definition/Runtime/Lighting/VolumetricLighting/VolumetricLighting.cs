@@ -265,7 +265,7 @@ namespace UnityEngine.Rendering.HighDefinition
 
             float screenFraction;
             int   sliceCount;
-            if (controller.fogControlMode == FogControl.Balance)
+            if (false) // (controller.fogControlMode == FogControl.Balance)
             {
                 // Evaluate the ssFraction and sliceCount based on the control parameters
                 float maxScreenSpaceFraction = (1.0f - controller.resolutionDepthRatio) * (Fog.maxFogScreenResolutionPercentage - Fog.minFogScreenResolutionPercentage) + Fog.minFogScreenResolutionPercentage;
