@@ -1068,7 +1068,7 @@ namespace UnityEngine.Rendering.HighDefinition
             ConstantBuffer.Set<ShaderVariablesLightList>(cmd, parameters.volumetricLightingCS, HDShaderIDs._ShaderVariablesLightList);
 
             // The shader defines GROUP_SIZE_1D = 8.
-            cmd.DispatchCompute(parameters.volumetricLightingCS, parameters.volumetricLightingKernel, ((int)parameters.resolution.x + 7) / 8, ((int)parameters.resolution.y + 7) / 8, parameters.viewCount);
+           // cmd.DispatchCompute(parameters.volumetricLightingCS, parameters.volumetricLightingKernel, ((int)parameters.resolution.x + 7) / 8, ((int)parameters.resolution.y + 7) / 8, parameters.viewCount);
         }
 
         static void FilterVolumetricLighting(in VolumetricLightingParameters parameters, RTHandle lightingBuffer, CommandBuffer cmd)
@@ -1114,11 +1114,9 @@ namespace UnityEngine.Rendering.HighDefinition
                     hdCamera.volumetricHistoryIsValid = true; // For the next frame...
             }
 
-            /*
             // Let's filter out volumetric buffer
             if (parameters.filterVolume)
                 FilterVolumetricLighting(parameters, m_LightingBuffer, cmd);
-            */
 
             cmd.SetGlobalTexture(HDShaderIDs._VBufferLighting, m_LightingBuffer);
         }
