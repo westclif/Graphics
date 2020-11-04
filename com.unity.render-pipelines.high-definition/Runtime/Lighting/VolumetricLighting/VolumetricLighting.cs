@@ -263,33 +263,18 @@ namespace UnityEngine.Rendering.HighDefinition
             int   viewportWidth  = hdCamera.actualWidth;
             int   viewportHeight = hdCamera.actualHeight;
 
-            float screenFraction;
-            int   sliceCount;
-            if (controller.fogControlMode == FogControl.Balance)
-            {
-                // Evaluate the ssFraction and sliceCount based on the control parameters
-                float maxScreenSpaceFraction = (1.0f - controller.resolutionDepthRatio) * (Fog.maxFogScreenResolutionPercentage - Fog.minFogScreenResolutionPercentage) + Fog.minFogScreenResolutionPercentage;
-                screenFraction = Mathf.Lerp(Fog.minFogScreenResolutionPercentage, maxScreenSpaceFraction, controller.volumetricFogBudget) * 0.01f;
-                float maxSliceCount = Mathf.Max(1.0f, controller.resolutionDepthRatio * Fog.maxFogSliceCount);
-                sliceCount = (int)Mathf.Lerp(1.0f, maxSliceCount, controller.volumetricFogBudget);
-
-                // Evaluate the voxel size
-                voxelSize = 1.0f / screenFraction;
-            }
-            else
-            {
-                screenFraction = controller.screenResolutionPercentage.value * 0.01f;
-                sliceCount = controller.volumeSliceCount.value;
-
-                if (controller.screenResolutionPercentage.value == Fog.optimalFogScreenResolutionPercentage)
-                    voxelSize = 8;
-                else
-                    voxelSize = 1.0f / screenFraction; // Does not account for rounding (same function, above)
-            }
+            float screenFraction = controller.screenResolutionPercentage.value * 0.01f;
+            int sliceCount = controller.volumeSliceCount.value;
+            
 
             int w = Mathf.RoundToInt(viewportWidth  * screenFraction);
             int h = Mathf.RoundToInt(viewportHeight * screenFraction);
             int d = sliceCount;
+
+            if (controller.screenResolutionPercentage.value == (1.0f / 8.0f) * 100)
+                voxelSize = 8;
+            else
+                voxelSize = 1.0f / screenFraction; // Does not account for rounding (same function, above)
 
             return new Vector3Int(w, h, d);
         }
@@ -1087,6 +1072,8 @@ namespace UnityEngine.Rendering.HighDefinition
 
         void VolumetricLightingPass(HDCamera hdCamera, CommandBuffer cmd, int frameIndex)
         {
+            return;
+            /*
             if (!Fog.IsVolumetricFogEnabled(hdCamera))
             {
                 cmd.SetGlobalTexture(HDShaderIDs._VBufferLighting, HDUtils.clearTexture3D);
@@ -1118,7 +1105,7 @@ namespace UnityEngine.Rendering.HighDefinition
             if (parameters.filterVolume)
                 FilterVolumetricLighting(parameters, m_LightingBuffer, cmd);
 
-            cmd.SetGlobalTexture(HDShaderIDs._VBufferLighting, m_LightingBuffer);
+            cmd.SetGlobalTexture(HDShaderIDs._VBufferLighting, m_LightingBuffer);*/
         }
     } // class VolumetricLightingModule
 } // namespace UnityEngine.Rendering.HighDefinition
