@@ -11,7 +11,7 @@
 #pragma multi_compile _ ENABLE_REPROJECTION
 #pragma multi_compile _ ENABLE_ANISOTROPY
 #pragma multi_compile _ VL_PRESET_OPTIMAL
-
+//#pragma multi_compile _ SUPPORT_LOCAL_LIGHTS
 
 // Don't want contact shadows
 #define LIGHT_EVALUATION_NO_CONTACT_SHADOWS // To define before LightEvaluation.hlsl
