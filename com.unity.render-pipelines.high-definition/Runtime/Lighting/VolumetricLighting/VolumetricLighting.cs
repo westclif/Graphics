@@ -268,8 +268,10 @@ namespace UnityEngine.Rendering.HighDefinition
             if (controller.fogControlMode == FogControl.Balance)
             {
                 // Evaluate the ssFraction and sliceCount based on the control parameters
-                screenFraction = controller.screenResolutionPercentage.value * 0.01f;
-                sliceCount = controller.volumeSliceCount.value;
+               // float maxScreenSpaceFraction = (1.0f - controller.resolutionDepthRatio) * (Fog.maxFogScreenResolutionPercentage - Fog.minFogScreenResolutionPercentage) + Fog.minFogScreenResolutionPercentage;
+                screenFraction = Mathf.Lerp(Fog.minFogScreenResolutionPercentage, Fog.minFogScreenResolutionPercentage, controller.volumetricFogBudget) * 0.01f;
+                float maxSliceCount = Mathf.Max(1.0f, controller.resolutionDepthRatio * Fog.maxFogSliceCount);
+                sliceCount = (int)Mathf.Lerp(1.0f, maxSliceCount, controller.volumetricFogBudget);
 
                 // Evaluate the voxel size
                 voxelSize = 1.0f / screenFraction;
