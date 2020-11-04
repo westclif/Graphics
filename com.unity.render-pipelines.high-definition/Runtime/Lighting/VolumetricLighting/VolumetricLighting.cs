@@ -1114,11 +1114,9 @@ namespace UnityEngine.Rendering.HighDefinition
                     hdCamera.volumetricHistoryIsValid = true; // For the next frame...
             }
 
-            /*
             // Let's filter out volumetric buffer
             if (parameters.filterVolume)
                 FilterVolumetricLighting(parameters, m_LightingBuffer, cmd);
-            */
 
             cmd.SetGlobalTexture(HDShaderIDs._VBufferLighting, m_LightingBuffer);
         }
