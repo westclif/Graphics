@@ -2765,6 +2765,7 @@ namespace UnityEngine.Rendering.HighDefinition
                         BindIndirectDiffuseTexture(cmd);
                         break;
 
+
                     case IndirectDiffuseMode.Raytrace:
                         RenderRayTracedIndirectDiffuse(hdCamera, cmd, renderContext, m_FrameCount);
                         break;
@@ -2818,8 +2819,9 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 GenerateMaxZ(cmd, hdCamera, m_SharedRTManager.GetDepthTexture(), m_SharedRTManager.GetDepthBufferMipChainInfo(), m_FrameCount);
 
-                // Render the volumetric lighting.
-                // The pass requires the volume properties, the light list and the shadows, and can run async.
+                    // Render the volumetric lighting.
+                    // The pass requires the volume properties, the light list and the shadows, and can run async.
+                //    BindIndirectDiffuseTexture(cmd);
                 VolumetricLightingPass(hdCamera, cmd, m_FrameCount);
 
                 if (hdCamera.frameSettings.SSAORunsAsync())

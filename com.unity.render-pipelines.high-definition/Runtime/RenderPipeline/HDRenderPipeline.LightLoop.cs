@@ -687,10 +687,11 @@ namespace UnityEngine.Rendering.HighDefinition
             public TextureHandle                maxZBuffer;
             public TextureHandle                historyBuffer;
             public TextureHandle                feedbackBuffer;
+            public TextureHandle                giBuffer;
             public ComputeBufferHandle          bigTileLightListBuffer;
         }
 
-        TextureHandle VolumetricLightingPass(RenderGraph renderGraph, HDCamera hdCamera, TextureHandle depthTexture, TextureHandle densityBuffer, TextureHandle maxZBuffer, ComputeBufferHandle bigTileLightListBuffer, ShadowResult shadowResult, int frameIndex)
+        TextureHandle VolumetricLightingPass(RenderGraph renderGraph, HDCamera hdCamera, TextureHandle depthTexture, TextureHandle densityBuffer, TextureHandle maxZBuffer, TextureHandle giBuffer, ComputeBufferHandle bigTileLightListBuffer, ShadowResult shadowResult, int frameIndex)
         {
             if (Fog.IsVolumetricFogEnabled(hdCamera))
             {
@@ -707,6 +708,7 @@ namespace UnityEngine.Rendering.HighDefinition
                     passData.densityBuffer = builder.ReadTexture(densityBuffer);
                     passData.depthTexture = builder.ReadTexture(depthTexture);
                     passData.maxZBuffer = builder.ReadTexture(maxZBuffer);
+                    passData.giBuffer = builder.ReadTexture(giBuffer);
 
                     float tileSize = 0;
                     Vector3Int viewportSize = ComputeVolumetricViewportSize(hdCamera, ref tileSize);
@@ -735,6 +737,7 @@ namespace UnityEngine.Rendering.HighDefinition
                                                 data.maxZBuffer,
                                                 data.parameters.enableReprojection ? data.historyBuffer  : (RTHandle)null,
                                                 data.parameters.enableReprojection ? data.feedbackBuffer : (RTHandle)null,
+                                                data.giBuffer,
                                                 data.bigTileLightListBuffer,
                                                 ctx.cmd);
 

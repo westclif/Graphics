@@ -14,7 +14,7 @@ namespace UnityEngine.Rendering.HighDefinition
     public partial class HDRenderPipeline
     {
         // Buffers used for the evaluation
-        RTHandle m_IndirectDiffuseBuffer0 = null;
+        public RTHandle m_IndirectDiffuseBuffer0 = null;
         RTHandle m_IndirectDiffuseBuffer1 = null;
         RTHandle m_IndirectDiffuseBuffer2 = null;
         RTHandle m_IndirectDiffuseBuffer3 = null;
@@ -71,6 +71,8 @@ namespace UnityEngine.Rendering.HighDefinition
         {
             cmd.SetGlobalTexture(HDShaderIDs._IndirectDiffuseTexture, m_IndirectDiffuseBuffer0);
         }
+
+        
 
         // If there is no SSGI, bind a black 1x1 texture
         static void BindBlackIndirectDiffuseTexture(CommandBuffer cmd)

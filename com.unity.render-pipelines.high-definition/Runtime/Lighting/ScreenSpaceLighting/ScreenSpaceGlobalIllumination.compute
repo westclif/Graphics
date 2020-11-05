@@ -23,7 +23,7 @@
 #define INDIRECT_DIFFUSE_TILE_SIZE 8
 
 // Epslon value used for the computation
-#define GI_TRACE_EPS 0.00024414
+#define GI_TRACE_EPS 1.00024414
 
 // Input depth pyramid texture
 TEXTURE2D_X(_DepthTexture);
@@ -361,8 +361,8 @@ void REPROJECT_GLOBAL_ILLUMINATION(uint3 dispatchThreadId : SV_DispatchThreadID,
         color = SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_linear_clamp_sampler, prevFrameUV, 0).rgb;
 
     // TODO: Remove me when you can find where the nans come from
-    if (AnyIsNaN(color))
-        color = 0.0f;
+   // if (AnyIsNaN(color))
+   //     color = 0.0f;
 
     // We need to recreate the direction that was generated
     float2 newSample;
@@ -377,7 +377,6 @@ void REPROJECT_GLOBAL_ILLUMINATION(uint3 dispatchThreadId : SV_DispatchThreadID,
 #else
     DecodeFromNormalBuffer(currentCoord.xy, normalData);
 #endif
-
     // We tone map the signal. Due to the very small budget for denoising, we need to compress the range of the signal
     color = color / (1.0 + color);
 
@@ -393,7 +392,7 @@ void REPROJECT_GLOBAL_ILLUMINATION(uint3 dispatchThreadId : SV_DispatchThreadID,
     // TODO: make this process not binary
     // Write the output to the target pixel
     _IndirectDiffuseTexture0RW[COORD_TEXTURE2D_X(currentCoord)] = float4(outYSH);
-    _IndirectDiffuseTexture1RW[COORD_TEXTURE2D_X(currentCoord)] = float4(outCoCg, invalid ? 0.0 : 1.0, length(motionVectorNDC * 10000.0f));
+    _IndirectDiffuseTexture1RW[COORD_TEXTURE2D_X(currentCoord)] = float4(outCoCg, invalid ? 0.4 : 1.0, length(motionVectorNDC * 10000.0f));
 }
 
 void ConvertYCoCgToRGBUtil(float4 inYSH, float2 inCoCg, float3 inNormal, out float3 outColor)
@@ -461,16 +460,23 @@ void CONVERT_YCOCG_TO_RGB(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 gr
     // We invert the tonemap
     color = color / (1.0 - color);
 
+
+    // Does this pixel recieve SSGI?
+    //uint stencilValue = GetStencilValue(LOAD_TEXTURE2D_X(_StencilTexture, currentCoord));
+    //if ((stencilValue & _SsrStencilBit) == 0)
+    //    cocgB.z = 0.0;
+
     // The mulitplication is wrong, but with all the approximations that we need to compensate a bit
     // the fact that the signal was significantly attenuated (due to blurring in tonemapped space to reduce the blobbyness). 
     // This has been experimentally tested. However, it needs more testing and potetially reverted if found more harmful than useful
-    color *= (lerp(2.5, 1.0, cocgB.z));
+  
+    color *= 15.5 * (1-cocgB.z);
+ 
+    float3 W = float3(0.2125, 0.7154, 0.0721);
+    float3 intensity = dot(color, W);
+    color = lerp(intensity, color, 7*(cocgB.z));
 
-    // Does this pixel recieve SSGI?
-    uint stencilValue = GetStencilValue(LOAD_TEXTURE2D_X(_StencilTexture, currentCoord));
-    if ((stencilValue & _SsrStencilBit) == 0)
-        cocgB.z = 0.0;
-
+   // color *= 1-cocgB.z;
     // Output the color as well as the blend factor
     _IndirectDiffuseTexture0RW[COORD_TEXTURE2D_X(currentCoord)] = float4(color, cocgB.z);
 }

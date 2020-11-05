@@ -141,9 +141,9 @@ namespace UnityEngine.Rendering.HighDefinition
         public static ProbeVolumesEncodingModes s_ProbeVolumesEncodingMode = (ProbeVolumesEncodingModes)ShaderOptions.ProbeVolumesEncodingMode;
         /// <summary>Indicates whether to support area lights.</summary>
         ///<seealso cref="ShaderOptions.AreaLights"/>
-        public static int s_AreaLights = (int)ShaderOptions.AreaLights;
+        public static int s_AreaLights = 0;
         /// <summary>Indicates whether to support barn doors.</summary>
         ///<seealso cref="ShaderOptions.BarnDoor"/>
-        public static int s_BarnDoor = (int)ShaderOptions.BarnDoor;
+        public static int s_BarnDoor = 0;
     }
 }
