@@ -190,43 +190,6 @@ float4 EvaluateLight_Directional(LightLoopContext lightLoopContext, PositionInpu
     }
 #endif
 
-#if SHADEROPTIONS_PRECOMPUTED_ATMOSPHERIC_ATTENUATION
-    // Precomputes atmospheric attenuation for the directional light on the CPU,
-    // which makes it independent from the fragment's position, which is faster but wrong.
-    // Basically, the code below runs on the CPU, using camera.positionWS, and modifies light.color.
-#else
-    // Use scalar or integer cores (more efficient).
-    bool interactsWithSky = asint(light.distanceFromCamera) >= 0;
-
-    if (interactsWithSky)
-    {
-        // TODO: should probably unify height attenuation somehow...
-        // TODO: Not sure it's possible to precompute cam rel pos since variables
-        // in the two constant buffers may be set at a different frequency?
-        float3 X = GetAbsolutePositionWS(posInput.positionWS);
-        float3 C = _PlanetCenterPosition.xyz;
-
-        float r        = distance(X, C);
-        float cosHoriz = ComputeCosineOfHorizonAngle(r);
-        float cosTheta = dot(X - C, L) * rcp(r); // Normalize
-
-        if (cosTheta >= cosHoriz) // Above horizon
-        {
-            float3 oDepth = ComputeAtmosphericOpticalDepth(r, cosTheta, true);
-            // Cannot do this once for both the sky and the fog because the sky may be desaturated. :-(
-            float3 transm  = TransmittanceFromOpticalDepth(oDepth);
-            float3 opacity = 1 - transm;
-            color.rgb *= 1 - (Desaturate(opacity, _AlphaSaturation) * _AlphaMultiplier);
-        }
-        else
-        {
-            // return 0; // Kill the light. This generates a warning, so can't early out. :-(
-           color = 0;
-        }
-    }
-
-#endif
-
 #ifndef LIGHT_EVALUATION_NO_COOKIE
     if (light.cookieMode != COOKIEMODE_NONE)
     {

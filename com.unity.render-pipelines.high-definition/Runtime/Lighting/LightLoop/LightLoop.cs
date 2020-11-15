@@ -342,12 +342,6 @@ namespace UnityEngine.Rendering.HighDefinition
                 GraphicsFormat probeCacheFormat = lightLoopSettings.reflectionProbeFormat == ReflectionAndPlanarProbeFormat.R11G11B10 ?
                                                   GraphicsFormat.B10G11R11_UFloatPack32 : GraphicsFormat.R16G16B16A16_SFloat;
 
-                // BC6H requires CPP feature not yet available
-                //if (lightLoopSettings.reflectionCacheCompressed)
-                //{
-                //    probeCacheFormat = GraphicsFormat.RGB_BC6H_SFloat;
-                //}
-
                 int reflectionCubeSize = lightLoopSettings.reflectionProbeCacheSize;
                 int reflectionCubeResolution = (int)lightLoopSettings.reflectionCubemapSize;
                 if (ReflectionProbeCache.GetApproxCacheSizeInByte(reflectionCubeSize, reflectionCubeResolution, iBLFilterBSDFArray.Length) > k_MaxCacheSize)
@@ -401,7 +395,6 @@ namespace UnityEngine.Rendering.HighDefinition
             }
         }
 
-        // TODO RENDERGRAPH: When we remove the old pass, we need to remove/refactor this class
         // With render graph it's only useful for 2 buffers and a boolean value.
         class TileAndClusterData
         {
@@ -1176,84 +1169,6 @@ namespace UnityEngine.Rendering.HighDefinition
             return 0.626657f * (r + 2 * s);
         }
 
-        static Vector3 ComputeAtmosphericOpticalDepth(PhysicallyBasedSky skySettings, float r, float cosTheta, bool alwaysAboveHorizon = false)
-        {
-            float R = skySettings.GetPlanetaryRadius();
-
-            Vector2 H    = new Vector2(skySettings.GetAirScaleHeight(), skySettings.GetAerosolScaleHeight());
-            Vector2 rcpH = new Vector2(Rcp(H.x), Rcp(H.y));
-
-            Vector2 z = r * rcpH;
-            Vector2 Z = R * rcpH;
-
-            float cosHoriz = ComputeCosineOfHorizonAngle(r, R);
-	        float sinTheta = Mathf.Sqrt(Saturate(1 - cosTheta * cosTheta));
-
-            Vector2 ch;
-            ch.x = ChapmanUpperApprox(z.x, Mathf.Abs(cosTheta)) * Mathf.Exp(Z.x - z.x); // Rescaling adds 'exp'
-            ch.y = ChapmanUpperApprox(z.y, Mathf.Abs(cosTheta)) * Mathf.Exp(Z.y - z.y); // Rescaling adds 'exp'
-
-            if ((!alwaysAboveHorizon) && (cosTheta < cosHoriz)) // Below horizon, intersect sphere
-	        {
-		        float sinGamma = (r / R) * sinTheta;
-		        float cosGamma = Mathf.Sqrt(Saturate(1 - sinGamma * sinGamma));
-
-		        Vector2 ch_2;
-                ch_2.x = ChapmanUpperApprox(Z.x, cosGamma); // No need to rescale
-                ch_2.y = ChapmanUpperApprox(Z.y, cosGamma); // No need to rescale
-
-		        ch = ch_2 - ch;
-            }
-            else if (cosTheta < 0)   // Above horizon, lower hemisphere
-            {
-    	        // z_0 = n * r_0 = (n * r) * sin(theta) = z * sin(theta).
-                // Ch(z, theta) = 2 * exp(z - z_0) * Ch(z_0, Pi/2) - Ch(z, Pi - theta).
-                Vector2 z_0  = z * sinTheta;
-                Vector2 b    = new Vector2(Mathf.Exp(Z.x - z_0.x), Mathf.Exp(Z.x - z_0.x)); // Rescaling cancels out 'z' and adds 'Z'
-                Vector2 a;
-                a.x         = 2 * ChapmanHorizontal(z_0.x);
-                a.y         = 2 * ChapmanHorizontal(z_0.y);
-                Vector2 ch_2 = a * b;
-
-                ch = ch_2 - ch;
-            }
-
-            Vector2 optDepth = ch * H;
-
-            Vector3 airExtinction     = skySettings.GetAirExtinctionCoefficient();
-            float   aerosolExtinction = skySettings.GetAerosolExtinctionCoefficient();
-
-            return new Vector3(optDepth.x * airExtinction.x + optDepth.y * aerosolExtinction,
-                               optDepth.x * airExtinction.y + optDepth.y * aerosolExtinction,
-                               optDepth.x * airExtinction.z + optDepth.y * aerosolExtinction);
-        }
-
-        // Computes transmittance along the light path segment.
-        static Vector3 EvaluateAtmosphericAttenuation(PhysicallyBasedSky skySettings, Vector3 L, Vector3 X)
-        {
-            Vector3 C = skySettings.GetPlanetCenterPosition(X); // X = camPosWS
-
-            float r = Vector3.Distance(X, C);
-            float R = skySettings.GetPlanetaryRadius();
-            float cosHoriz = ComputeCosineOfHorizonAngle(r, R);
-            float cosTheta = Vector3.Dot(X - C, L) * Rcp(r);
-
-            if (cosTheta > cosHoriz) // Above horizon
-            {
-                Vector3 oDepth = ComputeAtmosphericOpticalDepth(skySettings, r, cosTheta, true);
-                Vector3 transm;
-
-                transm.x = Mathf.Exp(-oDepth.x);
-                transm.y = Mathf.Exp(-oDepth.y);
-                transm.z = Mathf.Exp(-oDepth.z);
-
-                return transm;
-            }
-            else
-            {
-                return Vector3.zero;
-            }
-        }
 
         internal void GetDirectionalLightData(CommandBuffer cmd, HDCamera hdCamera, VisibleLight light, Light lightComponent, int lightIndex, int shadowIndex,
             int sortedIndex, bool isPhysicallyBasedSkyActive, ref int screenSpaceShadowIndex, ref int screenSpaceShadowslot)
@@ -1361,27 +1276,10 @@ namespace UnityEngine.Rendering.HighDefinition
                 lightData.nonLightMappedOnly = 0;
             }
 
-            bool interactsWithSky = isPhysicallyBasedSkyActive && additionalLightData.interactsWithSky;
-
             lightData.distanceFromCamera = -1; // Encode 'interactsWithSky'
+          //  lightData.distanceFromCamera = additionalLightData.distance;
 
-            if (interactsWithSky)
-            {
-                lightData.distanceFromCamera = additionalLightData.distance;
-
-                if (ShaderConfig.s_PrecomputedAtmosphericAttenuation != 0)
-                {
-                    var skySettings = hdCamera.volumeStack.GetComponent<PhysicallyBasedSky>();
-
-                    // Ignores distance (at infinity).
-                    Vector3 transm = EvaluateAtmosphericAttenuation(skySettings, - lightData.forward, hdCamera.camera.transform.position);
-                    lightData.color.x *= transm.x;
-                    lightData.color.y *= transm.y;
-                    lightData.color.z *= transm.z;
-                }
-            }
-
-            lightData.angularDiameter = additionalLightData.angularDiameter * Mathf.Deg2Rad;
+          lightData.angularDiameter = additionalLightData.angularDiameter * Mathf.Deg2Rad;
             lightData.flareSize       = Mathf.Max(additionalLightData.flareSize * Mathf.Deg2Rad, 5.960464478e-8f);
             lightData.flareFalloff    = additionalLightData.flareFalloff;
             lightData.flareTint       = (Vector3)(Vector4)additionalLightData.flareTint;
@@ -1396,15 +1294,7 @@ namespace UnityEngine.Rendering.HighDefinition
         // This function evaluates if there is currently enough screen space sahdow slots of a given light based on its light type
         bool EnoughScreenSpaceShadowSlots(GPULightType gpuLightType, int screenSpaceChannelSlot)
         {
-            if(gpuLightType == GPULightType.Rectangle)
-            {
-                // Area lights require two shadow slots
-                return (screenSpaceChannelSlot + 1) < m_Asset.currentPlatformRenderPipelineSettings.hdShadowInitParams.maxScreenSpaceShadowSlots;
-            }
-            else
-            {
-                return screenSpaceChannelSlot < m_Asset.currentPlatformRenderPipelineSettings.hdShadowInitParams.maxScreenSpaceShadowSlots;
-            }
+            return screenSpaceChannelSlot < m_Asset.currentPlatformRenderPipelineSettings.hdShadowInitParams.maxScreenSpaceShadowSlots;
         }
 
         internal void GetLightData(CommandBuffer cmd, HDCamera hdCamera, HDShadowSettings shadowSettings, VisibleLight light, Light lightComponent,
@@ -1427,13 +1317,6 @@ namespace UnityEngine.Rendering.HighDefinition
             {
                 lightData.rangeAttenuationScale = 1.0f / (light.range * light.range);
                 lightData.rangeAttenuationBias  = 1.0f;
-
-                if (lightData.lightType == GPULightType.Rectangle)
-                {
-                    // Rect lights are currently a special case because they use the normalized
-                    // [0, 1] attenuation range rather than the regular [0, r] one.
-                    lightData.rangeAttenuationScale = 1.0f;
-                }
             }
             else // Don't apply any attenuation but do a 'step' at range
             {
@@ -1444,13 +1327,6 @@ namespace UnityEngine.Rendering.HighDefinition
                 const float sqrtHuge  = 4096.0f;
                 lightData.rangeAttenuationScale = sqrtHuge / (light.range * light.range);
                 lightData.rangeAttenuationBias  = hugeValue;
-
-                if (lightData.lightType == GPULightType.Rectangle)
-                {
-                    // Rect lights are currently a special case because they use the normalized
-                    // [0, 1] attenuation range rather than the regular [0, r] one.
-                    lightData.rangeAttenuationScale = sqrtHuge;
-                }
             }
 
             lightData.color = GetLightColor(light);
@@ -1464,49 +1340,6 @@ namespace UnityEngine.Rendering.HighDefinition
             lightDimensions.z = light.range;
 
             lightData.boxLightSafeExtent = 1.0f;
-            if (lightData.lightType == GPULightType.ProjectorBox)
-            {
-                // Rescale for cookies and windowing.
-                lightData.right *= 2.0f / Mathf.Max(additionalLightData.shapeWidth, 0.001f);
-                lightData.up    *= 2.0f / Mathf.Max(additionalLightData.shapeHeight, 0.001f);
-
-                // If we have shadows, we need to shrink the valid range so that we don't leak light due to filtering going out of bounds.
-                if (shadowIndex >= 0)
-                {
-                    // We subtract a bit from the safe extent depending on shadow resolution
-                    float shadowRes = additionalLightData.shadowResolution.Value(m_ShadowInitParameters.shadowResolutionPunctual);
-                    shadowRes = Mathf.Clamp(shadowRes, 128.0f, 2048.0f); // Clamp in a somewhat plausible range.
-                    // The idea is to subtract as much as 0.05 for small resolutions.
-                    float shadowResFactor = Mathf.Lerp(0.05f, 0.01f, Mathf.Max(shadowRes / 2048.0f, 0.0f));
-                    lightData.boxLightSafeExtent = 1.0f - shadowResFactor;
-                }
-            }
-            else if (lightData.lightType == GPULightType.ProjectorPyramid)
-            {
-                // Get width and height for the current frustum
-                var spotAngle = light.spotAngle;
-
-                float frustumWidth, frustumHeight;
-
-                if (additionalLightData.aspectRatio >= 1.0f)
-                {
-                    frustumHeight = 2.0f * Mathf.Tan(spotAngle * 0.5f * Mathf.Deg2Rad);
-                    frustumWidth = frustumHeight * additionalLightData.aspectRatio;
-                }
-                else
-                {
-                    frustumWidth = 2.0f * Mathf.Tan(spotAngle * 0.5f * Mathf.Deg2Rad);
-                    frustumHeight = frustumWidth / additionalLightData.aspectRatio;
-                }
-
-                // Adjust based on the new parametrization.
-                lightDimensions.x = frustumWidth;
-                lightDimensions.y = frustumHeight;
-
-                // Rescale for cookies and windowing.
-                lightData.right *= 2.0f / frustumWidth;
-                lightData.up *= 2.0f / frustumHeight;
-            }
 
             if (lightData.lightType == GPULightType.Spot)
             {
@@ -1539,11 +1372,6 @@ namespace UnityEngine.Rendering.HighDefinition
             {
                 // Store the squared radius of the light to simulate a fill light.
                 lightData.size = new Vector4(additionalLightData.shapeRadius * additionalLightData.shapeRadius, 0, 0, 0);
-            }
-
-            if (lightData.lightType == GPULightType.Rectangle || lightData.lightType == GPULightType.Tube)
-            {
-                lightData.size = new Vector4(additionalLightData.shapeWidth, additionalLightData.shapeHeight, Mathf.Cos(additionalLightData.barnDoorAngle * Mathf.PI / 180.0f), additionalLightData.barnDoorLength);
             }
 
             lightData.lightDimmer           = processedData.lightDistanceFade * (additionalLightData.lightDimmer);
@@ -1585,15 +1413,6 @@ namespace UnityEngine.Rendering.HighDefinition
                         else if (additionalLightData.IESPoint != null)
                             lightData.cookieScaleOffset = m_TextureCaches.lightCookieManager.FetchCubeCookie(cmd, additionalLightData.IESPoint);
                         break;
-                    case HDLightType.Area:
-                        lightData.cookieMode = CookieMode.Clamp;
-                        if (additionalLightData.areaLightCookie != null && additionalLightData.IESSpot != null && additionalLightData.areaLightCookie != additionalLightData.IESSpot)
-                            lightData.cookieScaleOffset = m_TextureCaches.lightCookieManager.FetchAreaCookie(cmd, additionalLightData.areaLightCookie, additionalLightData.IESSpot);
-                        else if (additionalLightData.IESSpot != null)
-                            lightData.cookieScaleOffset = m_TextureCaches.lightCookieManager.FetchAreaCookie(cmd, additionalLightData.IESSpot);
-                        else if (additionalLightData.areaLightCookie != null)
-                            lightData.cookieScaleOffset = m_TextureCaches.lightCookieManager.FetchAreaCookie(cmd, additionalLightData.areaLightCookie);
-                        break;
                 }
             }
             else if (lightType == HDLightType.Spot && additionalLightData.spotLightShape != SpotLightShape.Cone)
@@ -1602,19 +1421,6 @@ namespace UnityEngine.Rendering.HighDefinition
                 // As long as the cache is a texture array and not an atlas, the 4x4 white texture will be rescaled to 128
                 lightData.cookieMode = CookieMode.Clamp;
                 lightData.cookieScaleOffset = m_TextureCaches.lightCookieManager.Fetch2DCookie(cmd, Texture2D.whiteTexture);
-            }
-            else if (lightData.lightType == GPULightType.Rectangle)
-            {
-                if (additionalLightData.areaLightCookie != null || additionalLightData.IESPoint != null)
-                {
-                    lightData.cookieMode = CookieMode.Clamp;
-                    if (additionalLightData.areaLightCookie != null && additionalLightData.IESSpot != null && additionalLightData.areaLightCookie != additionalLightData.IESSpot)
-                        lightData.cookieScaleOffset = m_TextureCaches.lightCookieManager.FetchAreaCookie(cmd, additionalLightData.areaLightCookie, additionalLightData.IESSpot);
-                    else if (additionalLightData.IESSpot != null)
-                        lightData.cookieScaleOffset = m_TextureCaches.lightCookieManager.FetchAreaCookie(cmd, additionalLightData.IESSpot);
-                    else if (additionalLightData.areaLightCookie != null)
-                        lightData.cookieScaleOffset = m_TextureCaches.lightCookieManager.FetchAreaCookie(cmd, additionalLightData.areaLightCookie);
-                }
             }
 
             float shadowDistanceFade         = HDUtils.ComputeLinearDistanceFade(processedData.distanceToCamera, Mathf.Min(shadowSettings.maxShadowDistance.value, additionalLightData.shadowFadeDistance));
@@ -1636,17 +1442,6 @@ namespace UnityEngine.Rendering.HighDefinition
                 && additionalLightData.WillRenderScreenSpaceShadow()
                 && isRasterization)
             {
-                if (lightData.lightType == GPULightType.Rectangle)
-                {
-                    // Rectangle area lights require 2 consecutive slots.
-                    // Meaning if (screenSpaceChannelSlot % 4 ==3), we'll need to skip a slot
-                    // so that the area shadow gets the first two slots of the next following texture
-                    if (screenSpaceChannelSlot % 4 == 3)
-                    {
-                        screenSpaceChannelSlot++;
-                    }
-                }
-
                 // Bind the next available slot to the light
                 lightData.screenSpaceShadowIndex = screenSpaceChannelSlot;
 
@@ -1796,72 +1591,6 @@ namespace UnityEngine.Rendering.HighDefinition
                 lightVolumeData.lightPos = bound.center;
                 lightVolumeData.radiusSq = range * range;
                 lightVolumeData.featureFlags = (uint)LightFeatureFlags.Punctual;
-            }
-            else if (gpuLightType == GPULightType.Tube)
-            {
-                Vector3 dimensions = new Vector3(lightDimensions.x + 2 * range, 2 * range, 2 * range); // Omni-directional
-                Vector3 extents    = 0.5f * dimensions;
-                Vector3 centerVS   = positionVS;
-
-                bound.center   = centerVS;
-                bound.boxAxisX = extents.x * xAxisVS;
-                bound.boxAxisY = extents.y * yAxisVS;
-                bound.boxAxisZ = extents.z * zAxisVS;
-                bound.radius   = extents.x;
-                bound.scaleXY  = 1.0f;
-
-                lightVolumeData.lightPos   = centerVS;
-                lightVolumeData.lightAxisX = xAxisVS;
-                lightVolumeData.lightAxisY = yAxisVS;
-                lightVolumeData.lightAxisZ = zAxisVS;
-                lightVolumeData.boxInvRange.Set(1.0f / extents.x, 1.0f / extents.y, 1.0f / extents.z);
-                lightVolumeData.featureFlags = (uint)LightFeatureFlags.Area;
-            }
-            else if (gpuLightType == GPULightType.Rectangle)
-            {
-                Vector3 dimensions = new Vector3(lightDimensions.x + 2 * range, lightDimensions.y + 2 * range, range); // One-sided
-                Vector3 extents    = 0.5f * dimensions;
-                Vector3 centerVS   = positionVS + extents.z * zAxisVS;
-
-                float d = range + 0.5f * Mathf.Sqrt(lightDimensions.x * lightDimensions.x + lightDimensions.y * lightDimensions.y);
-
-                bound.center   = centerVS;
-                bound.boxAxisX = extents.x * xAxisVS;
-                bound.boxAxisY = extents.y * yAxisVS;
-                bound.boxAxisZ = extents.z * zAxisVS;
-                bound.radius   = Mathf.Sqrt(d * d + (0.5f * range) * (0.5f * range));
-                bound.scaleXY  = 1.0f;
-
-                lightVolumeData.lightPos   = centerVS;
-                lightVolumeData.lightAxisX = xAxisVS;
-                lightVolumeData.lightAxisY = yAxisVS;
-                lightVolumeData.lightAxisZ = zAxisVS;
-                lightVolumeData.boxInvRange.Set(1.0f / extents.x, 1.0f / extents.y, 1.0f / extents.z);
-                lightVolumeData.featureFlags = (uint)LightFeatureFlags.Area;
-            }
-            else if (gpuLightType == GPULightType.ProjectorBox)
-            {
-                Vector3 dimensions = new Vector3(lightDimensions.x, lightDimensions.y, range);  // One-sided
-                Vector3 extents    = 0.5f * dimensions;
-                Vector3 centerVS   = positionVS + extents.z * zAxisVS;
-
-                bound.center   = centerVS;
-                bound.boxAxisX = extents.x * xAxisVS;
-                bound.boxAxisY = extents.y * yAxisVS;
-                bound.boxAxisZ = extents.z * zAxisVS;
-                bound.radius   = extents.magnitude;
-                bound.scaleXY  = 1.0f;
-
-                lightVolumeData.lightPos   = centerVS;
-                lightVolumeData.lightAxisX = xAxisVS;
-                lightVolumeData.lightAxisY = yAxisVS;
-                lightVolumeData.lightAxisZ = zAxisVS;
-                lightVolumeData.boxInvRange.Set(1.0f / extents.x, 1.0f / extents.y, 1.0f / extents.z);
-                lightVolumeData.featureFlags = (uint)LightFeatureFlags.Punctual;
-            }
-            else if (gpuLightType == GPULightType.Disc)
-            {
-                //not supported at real time at the moment
             }
             else
             {
@@ -2214,33 +1943,6 @@ namespace UnityEngine.Rendering.HighDefinition
                     lightVolumeType = LightVolumeType.Sphere;
                     break;
 
-                case HDLightType.Area:
-                    lightCategory = LightCategory.Area;
-
-                    switch (areaLightShape)
-                    {
-                        case AreaLightShape.Rectangle:
-                            gpuLightType = GPULightType.Rectangle;
-                            lightVolumeType = LightVolumeType.Box;
-                            break;
-
-                        case AreaLightShape.Tube:
-                            gpuLightType = GPULightType.Tube;
-                            lightVolumeType = LightVolumeType.Box;
-                            break;
-
-                        case AreaLightShape.Disc:
-                            //not used in real-time at the moment anyway
-                            gpuLightType = GPULightType.Disc;
-                            lightVolumeType = LightVolumeType.Sphere;
-                            break;
-
-                        default:
-                            Debug.Assert(false, "Encountered an unknown AreaLightShape.");
-                            break;
-                    }
-                    break;
-
                 default:
                     Debug.Assert(false, "Encountered an unknown LightType.");
                     break;
@@ -2327,7 +2029,7 @@ namespace UnityEngine.Rendering.HighDefinition
                     continue;
 
                 var lightType = processedData.lightType;
-                if (ShaderConfig.s_AreaLights == 0 && (lightType == HDLightType.Area && (additionalData.areaLightShape == AreaLightShape.Rectangle || additionalData.areaLightShape == AreaLightShape.Tube)))
+                if ((lightType == HDLightType.Area && (additionalData.areaLightShape == AreaLightShape.Rectangle || additionalData.areaLightShape == AreaLightShape.Tube)))
                     continue;
 
                 bool contributesToLighting = ((additionalData.lightDimmer > 0) && (additionalData.affectDiffuse || additionalData.affectSpecular)) || (additionalData.volumetricDimmer > 0);
@@ -2348,10 +2050,6 @@ namespace UnityEngine.Rendering.HighDefinition
                         }
                         if (!debugDisplaySettings.data.lightingDebugSettings.showPunctualLight || punctualLightcount >= m_MaxPunctualLightsOnScreen) continue;
                         punctualLightcount++;
-                        break;
-                    case LightCategory.Area:
-                        if (!debugDisplaySettings.data.lightingDebugSettings.showAreaLight || areaLightCount >= m_MaxAreaLightsOnScreen) continue;
-                        areaLightCount++;
                         break;
                     default:
                         break;
@@ -2399,8 +2097,6 @@ namespace UnityEngine.Rendering.HighDefinition
 
             var visualEnvironment = hdCamera.volumeStack.GetComponent<VisualEnvironment>();
             Debug.Assert(visualEnvironment != null);
-
-            bool isPbrSkyActive = visualEnvironment.skyType.value == (int)SkyType.PhysicallyBased;
 
             var hdShadowSettings = hdCamera.volumeStack.GetComponent<HDShadowSettings>();
 
@@ -2459,7 +2155,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 // Directional rendering side, it is separated as it is always visible so no volume to handle here
                 if (gpuLightType == GPULightType.Directional)
                 {
-                    GetDirectionalLightData(cmd, hdCamera, light, lightComponent, lightIndex, shadowIndex, directionalLightcount, isPbrSkyActive, ref m_ScreenSpaceShadowIndex, ref m_ScreenSpaceShadowChannelSlot);
+                    GetDirectionalLightData(cmd, hdCamera, light, lightComponent, lightIndex, shadowIndex, directionalLightcount, false, ref m_ScreenSpaceShadowIndex, ref m_ScreenSpaceShadowChannelSlot);
 
                     directionalLightcount++;
 
@@ -2491,9 +2187,6 @@ namespace UnityEngine.Rendering.HighDefinition
                     {
                         case LightCategory.Punctual:
                             punctualLightcount++;
-                            break;
-                        case LightCategory.Area:
-                            areaLightCount++;
                             break;
                         default:
                             Debug.Assert(false, "TODO: encountered an unknown LightCategory.");
@@ -2909,18 +2602,6 @@ namespace UnityEngine.Rendering.HighDefinition
                     else if (hdLightData.spotLightShape != SpotLightShape.Cone)
                         m_TextureCaches.lightCookieManager.ReserveSpace(Texture2D.whiteTexture);
                     break;
-                case HDLightType.Area:
-                    // Only rectangle can have cookies
-                    if (hdLightData.areaLightShape == AreaLightShape.Rectangle)
-                    {
-                        if (hdLightData.IESSpot != null && hdLightData.areaLightCookie != null && hdLightData.IESSpot != hdLightData.areaLightCookie)
-                            m_TextureCaches.lightCookieManager.ReserveSpace(hdLightData.areaLightCookie, hdLightData.IESSpot);
-                        else if (hdLightData.IESSpot != null)
-                            m_TextureCaches.lightCookieManager.ReserveSpace(hdLightData.IESSpot);
-                        else if (hdLightData.areaLightCookie != null)
-                            m_TextureCaches.lightCookieManager.ReserveSpace(hdLightData.areaLightCookie);
-                    }
-                    break;
             }
         }
 
@@ -3081,7 +2762,7 @@ namespace UnityEngine.Rendering.HighDefinition
             int i = 0;
             while(totalNumberOfGroupsNeeded > 0)
             {
-                countAndOffset.y = maxAllowedGroups * i;                
+                countAndOffset.y = maxAllowedGroups * i;
                 cmd.SetComputeVectorParam(parameters.clearLightListCS, HDShaderIDs._LightListEntriesAndOffset, countAndOffset);
 
                 int currGroupCount = Math.Min(maxAllowedGroups, totalNumberOfGroupsNeeded);

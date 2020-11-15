@@ -143,16 +143,8 @@ namespace UnityEngine.Rendering.HighDefinition
             public Shader integrateHdriSkyPS;
             [Reload("Skybox/Cubemap", ReloadAttribute.Package.Builtin)]
             public Shader skyboxCubemapPS;
-            [Reload("Runtime/Sky/GradientSky/GradientSky.shader")]
-            public Shader gradientSkyPS;
             [Reload("Runtime/Sky/AmbientProbeConvolution.compute")]
             public ComputeShader ambientProbeConvolutionCS;
-            [Reload("Runtime/Sky/PhysicallyBasedSky/GroundIrradiancePrecomputation.compute")]
-            public ComputeShader groundIrradiancePrecomputationCS;
-            [Reload("Runtime/Sky/PhysicallyBasedSky/InScatteredRadiancePrecomputation.compute")]
-            public ComputeShader inScatteredRadiancePrecomputationCS;
-            [Reload("Runtime/Sky/PhysicallyBasedSky/PhysicallyBasedSky.shader")]
-            public Shader        physicallyBasedSkyPS;
             [Reload("Runtime/Lighting/PlanarReflectionFiltering.compute")]
             public ComputeShader planarReflectionFilteringCS;
             // Material

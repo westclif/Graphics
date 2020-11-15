@@ -48,27 +48,6 @@ namespace UnityEditor.Rendering.HighDefinition
             }
         }
 
-        [MenuItem("GameObject/Volume/Sky and Fog Volume", priority = CoreUtils.gameObjectMenuPriority)]
-        static void CreateSceneSettingsGameObject(MenuCommand menuCommand)
-        {
-            var parent = menuCommand.context as GameObject;
-            var settings = CoreEditorUtils.CreateGameObject("Sky and Fog Volume", parent);
-
-            var profile = VolumeProfileFactory.CreateVolumeProfile(settings.scene, "Sky and Fog Settings");
-            var visualEnv = VolumeProfileFactory.CreateVolumeComponent<VisualEnvironment>(profile, true, false);
-
-            visualEnv.skyType.value = SkySettings.GetUniqueID<PhysicallyBasedSky>();
-            visualEnv.skyAmbientMode.overrideState = false;
-            VolumeProfileFactory.CreateVolumeComponent<PhysicallyBasedSky>(profile, false, false);
-            var fog = VolumeProfileFactory.CreateVolumeComponent<Fog>(profile, false, true);
-            fog.enabled.Override(true);
-            fog.enableVolumetricFog.Override(true);
-
-            var volume = settings.AddComponent<Volume>();
-            volume.isGlobal = true;
-            volume.sharedProfile = profile;
-        }
-
         [MenuItem("Edit/Render Pipeline/HD Render Pipeline/Upgrade from Previous Version /Upgrade HDRP Materials to Latest Version")]
         internal static void UpgradeMaterials()
         {
