@@ -35,7 +35,7 @@
 #define USE_DEPTH_BUFFER        1 // Accounts for opaque geometry along the camera ray
 
 // Filter out lights that are not meant to be affecting volumetric once per thread rather than per voxel. This has the downside that it limits the max processable lights to MAX_SUPPORTED_LIGHTS
-// which might be lower than the max number of lights that might be in the big tile. 
+// which might be lower than the max number of lights that might be in the big tile.
 #define PRE_FILTER_LIGHT_LIST   1 && defined(USE_BIG_TILE_LIGHTLIST)
 
 //--------------------------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ TEXTURE2D_X(_GI);
 
 #if PRE_FILTER_LIGHT_LIST
 
-#define MAX_SUPPORTED_LIGHTS min(48, MAX_NR_BIG_TILE_LIGHTS_PLUS_ONE) 
+#define MAX_SUPPORTED_LIGHTS min(48, MAX_NR_BIG_TILE_LIGHTS_PLUS_ONE)
 groupshared int gs_localLightList[GROUP_SIZE_1D*GROUP_SIZE_1D][MAX_SUPPORTED_LIGHTS];
 
 #endif
@@ -132,6 +132,43 @@ float ComputeHistoryWeight()
     float historyWeight = 1 - frameWeight;
 
     return historyWeight;
+}
+
+float _AzureFogNoiseScaling;
+float _AzureFogNoiseAmount;
+float4 _AzureWindSpeedWindTiling;
+
+float hash( float n ) { return frac(sin(n)*753.5453123); }
+float noisep(float3 x)
+{
+    float3 p = floor(x);
+    float3 f = frac(x);
+    f = f*f*(3.0-2.0*f);
+
+    float n = p.x + p.y*157.0 + 113.0*p.z;
+    return lerp(lerp(lerp( hash(n+  0.0), hash(n+  1.0),f.x),
+                   lerp( hash(n+157.0), hash(n+158.0),f.x),f.y),
+               lerp(lerp( hash(n+113.0), hash(n+114.0),f.x),
+                   lerp( hash(n+270.0), hash(n+271.0),f.x),f.y),f.z);
+}
+
+float ScrollNoise(float3 pos, float scale, float amount, float bias = -0.03, float mult = 2.0)
+{
+    //scale in movement direction
+    pos  /= float3(0.5 + _AzureWindSpeedWindTiling.x*0.5, 1, 0.5 +_AzureWindSpeedWindTiling.y*0.5);
+	float noiseScale = scale;
+	float3 noiseScroll = float3(_AzureWindSpeedWindTiling.x, 0.2, _AzureWindSpeedWindTiling.y) * _Time.yyy;
+	float3 q = pos - noiseScroll;
+	q *= scale;
+	float f = 0.5 * noisep(q);
+	// scroll the next octave in the opposite direction to get some morphing instead of just scrolling
+	q += noiseScroll * scale;
+	q = q * 2.01;
+	f += 0.25 * noisep(q);
+	f *= noisep(q*0.15 - noiseScroll * 0.2)*2;
+	f += bias;
+	f *= mult;
+	return max(0,lerp(1.0, f, amount));
 }
 
 // Computes the light integral (in-scattered radiance) within the voxel.
@@ -269,7 +306,7 @@ VoxelLighting EvaluateVoxelLightingLocal(LightLoopContext context, uint groupIdx
             uint lightIndex = FetchIndex(lightStart, lightOffset);
 #endif
             LightData light = _LightDatas[lightIndex];
-                
+
 
             if (light.lightType >= GPULIGHTTYPE_PROJECTOR_BOX) { break; }
 
@@ -518,7 +555,7 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
     // SampleSH9() evaluates the 3-band SH in a given direction.
     // The probe is already pre-convolved with the phase function.
     // Note: anisotropic, no jittering.
-    float3 probeInScatteredRadiance = SampleSH9(_AmbientProbeCoeffs, ray.centerDirWS);
+  //  float3 probeInScatteredRadiance = SampleSH9(_AmbientProbeCoeffs, ray.centerDirWS);
 
     float3 totalRadiance = 0;
     float  opticalDepth  = 0;
@@ -552,9 +589,12 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
         float  t = DecodeLogarithmicDepthGeneralized(e1 - 0.5 * de, _VBufferDistanceDecodingParams);
         float3 centerWS = ray.originWS + t * ray.centerDirWS;
 
+
         // Sample the participating medium at the center of the voxel.
         // We consider it to be constant along the interval [t0, t1] (within the voxel).
         float4 density = LOAD_TEXTURE3D(_VBufferDensity, voxelCoord);
+
+        density *= ScrollNoise(GetAbsolutePositionWS(centerWS), _AzureFogNoiseScaling, _AzureFogNoiseAmount);
 
         float3 scattering = density.rgb;
         float  extinction = density.a;
@@ -681,17 +721,19 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
         float phase = IsotropicPhaseFunction();
     #endif // ENABLE_ANISOTROPY
 
+       // giColor += float3(3,0,0);
+
         // Integrate the contribution of the probe over the interval.
         // Integral{a, b}{Transmittance(0, t) * L_s(t) dt} = Transmittance(0, a) * Integral{a, b}{Transmittance(0, t - a) * L_s(t) dt}.
-        float3 probeRadiance = giColor * TransmittanceIntegralHomogeneousMedium(extinction, dt);
-
+       // float3 probeRadiance = giColor * TransmittanceIntegralHomogeneousMedium(extinction, dt) ;
+        float3 probeRadiance = giColor * TransmittanceIntegralHomogeneousMedium(extinction, dt) ;
         // Accumulate radiance along the ray.
         totalRadiance += transmittance * scattering * (phase * blendValue.rgb + probeRadiance);
 
         // Compute the optical depth up to the center of the interval.
         opticalDepth += 0.5 * blendValue.a;
 
-        
+
         // Store the voxel data.
         // Note: for correct filtering, the data has to be stored in the perceptual space.
         // This means storing the tone mapped radiance and transmittance instead of optical depth.
@@ -794,10 +836,15 @@ void VolumetricLighting(uint3 dispatchThreadId : SV_DispatchThreadID,
 #if USE_DEPTH_BUFFER
     float deviceDepth = LoadCameraDepth(pixelCoord);
 
+    float3 color = float3(0,0,0);
+
     if (deviceDepth > 0) // Skip the skybox
     {
         // Convert it to distance along the ray. Doesn't work with tilt shift, etc.
         float linearDepth = LinearEyeDepth(deviceDepth, _ZBufferParams);
+
+        color = LOAD_TEXTURE2D_X(_GI, pixelCoord).rgb;
+
         ray.geomDist = linearDepth * rcp(dot(ray.jitterDirWS, F));
 
         float2 UV = posInput.positionNDC * _RTHandleScale.xy;
@@ -816,10 +863,11 @@ void VolumetricLighting(uint3 dispatchThreadId : SV_DispatchThreadID,
 
     ApplyCameraRelativeXR(ray.originWS);
 
-        float2 UV2 = ((voxelCoord + 0.5 ) * _VBufferVoxelSize);
-        float3 color = LOAD_TEXTURE2D_X(_GI, UV2).rgb;
 
+
+  //  float3 W = float3(0.2126729, 0.7151522, 0.0721750);
+  //  float3 intensity = dot(color, W);
+  //  color = lerp(intensity, color, 0.4);
 
     FillVolumetricLightingBuffer(context, featureFlags, posInput, tileIndex, groupIndex, ray,color);
-
 }

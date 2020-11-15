@@ -228,6 +228,12 @@ void RayGenGBufferBinned()
     // Evaluate the ray visibility term and PDF
     TraceRay(_RaytracingAccelerationStructure, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, _RayTracingLayerMask, 0, 1, 0, rayDescriptor, rayIntersection);
 
+
+    //rayIntersection.gbuffer3 *= 3;
+   // float3 W = float3(0.2126729, 0.7151522, 0.0721750);
+   // float4 intensity = dot(rayIntersection.gbuffer3, W);
+   // rayIntersection.gbuffer3 = lerp(intensity, rayIntersection.gbuffer3, 555415);
+
     // Output the gbuffer
     _GBufferTexture0RW[COORD_TEXTURE2D_X(currentPixelCoord)] = float4(LinearToSRGB(rayIntersection.gbuffer0.xyz), rayIntersection.gbuffer0.w);
     _GBufferTexture1RW[COORD_TEXTURE2D_X(currentPixelCoord)] = float4(rayIntersection.gbuffer1);

@@ -103,10 +103,21 @@ void RAYTRACING_DEFERRED(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 gro
     float3 specularLighting = lightLoopOutput.specularLighting;
 
     float3 finalColor = (diffuseLighting + specularLighting);
+
+  
+    finalColor *= 4;
+    float3 W = float3(0.2126729, 0.7151522, 0.0721750);
+    float3 intensity = dot(finalColor, W);
+    finalColor = lerp(intensity, finalColor, 3);
+
+
     // Apply fog attenuation
     ApplyFogAttenuation(positionWS, rayDirection, rayDistance, finalColor, true);
     // Expose, clamp and inverse exposure
     finalColor = clamp(finalColor * GetCurrentExposureMultiplier(), 0.0, _RaytracingIntensityClamp) * (_RaytracingPreExposition ? 1.0 : GetInverseCurrentExposureMultiplier());
+
+
+
     _RaytracingLitBufferRW[COORD_TEXTURE2D_X(currentCoord)] = float4(finalColor, 1.0);
 }
 

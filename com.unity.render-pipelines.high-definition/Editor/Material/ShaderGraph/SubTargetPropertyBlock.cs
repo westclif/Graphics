@@ -14,7 +14,7 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
     {
         // Null/Empty means no title
         protected virtual string title => null;
-        
+
         protected TargetPropertyGUIContext context;
         protected Action onChange;
         protected Action<String> registerUndo;
@@ -59,8 +59,6 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
                 case DistortionMode e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip } as BaseField<Enum>; break;
                 case ScreenSpaceRefraction.RefractionModel e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip } as BaseField<Enum>; break;
                 case SpecularOcclusionMode e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip } as BaseField<Enum>; break;
-                case FabricData.MaterialType e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip } as BaseField<Enum>; break;
-                case EyeData.MaterialType e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip } as BaseField<Enum>; break;
                 case StackLit.BaseParametrization e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip } as BaseField<Enum>; break;
                 case StackLit.DualSpecularLobeParametrization e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip } as BaseField<Enum>; break;
                 case OpaqueCullMode e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip } as BaseField<Enum>; break;
@@ -117,7 +115,7 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
         {
             // We don't use UIElement HelpBox because it's width is not dynamic.
             int indentLevel = context.globalIndentLevel;
-            var imgui = new IMGUIContainer(() => 
+            var imgui = new IMGUIContainer(() =>
             {
                 float indentPadding = indentLevel * 15;
                 var rect = EditorGUILayout.GetControlRect(false, 42);

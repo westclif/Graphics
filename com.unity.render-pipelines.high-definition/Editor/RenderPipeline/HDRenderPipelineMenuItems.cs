@@ -35,14 +35,6 @@ namespace UnityEditor.Rendering.HighDefinition
                     LitGUI.SetupMaterialKeywordsAndPass(mat);
                     EditorUtility.SetDirty(mat);
                 }
-                else if (mat.shader.name == "HDRP/LayeredLitTessellation")
-                {
-                    mat.shader = layeredLitShader;
-                    // We remove all keyword already present
-                    CoreEditorUtils.RemoveMaterialKeywords(mat);
-                    LayeredLitGUI.SetupMaterialKeywordsAndPass(mat);
-                    EditorUtility.SetDirty(mat);
-                }
             }
         }
 
@@ -250,18 +242,7 @@ namespace UnityEditor.Rendering.HighDefinition
         static void SynchronizeAllLayeredMaterial()
         {
             var materials = Resources.FindObjectsOfTypeAll<Material>();
-
             bool VCSEnabled = (UnityEditor.VersionControl.Provider.enabled && UnityEditor.VersionControl.Provider.isActive);
-
-            foreach (var mat in materials)
-            {
-                if (mat.shader.name == "HDRP/LayeredLit" || mat.shader.name == "HDRP/LayeredLitTessellation")
-                {
-                    CoreEditorUtils.CheckOutFile(VCSEnabled, mat);
-                    LayeredLitGUI.SynchronizeAllLayers(mat);
-                    EditorUtility.SetDirty(mat);
-                }
-            }
         }
 
         // We now do this automatically when upgrading Material version, so not required anymore - keep it in case you want to manually do it

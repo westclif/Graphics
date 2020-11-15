@@ -81,7 +81,6 @@ DirectLighting ShadeSurface_Directional(LightLoopContext lightLoopContext,
     {
         float4 lightColor = EvaluateLight_Directional(lightLoopContext, posInput, light);
         lightColor.rgb *= lightColor.a; // Composite
-
 #ifdef MATERIAL_INCLUDE_TRANSMISSION
         if (ShouldEvaluateThickObjectTransmission(V, L, preLightData, bsdfData, light.shadowIndex))
         {
@@ -94,6 +93,7 @@ DirectLighting ShadeSurface_Directional(LightLoopContext lightLoopContext,
         {
             SHADOW_TYPE shadow = EvaluateShadow_Directional(lightLoopContext, posInput, light, builtinData, GetNormalForShadowBias(bsdfData));
             float NdotL  = dot(bsdfData.normalWS, L); // No microshadowing when facing away from light (use for thin transmission as well)
+          //  NdotL = NdotL * 0.5 + 0.5;
             shadow *= NdotL >= 0.0 ? ComputeMicroShadowing(GetAmbientOcclusionForMicroShadowing(bsdfData), NdotL, _MicroShadowOpacity) : 1.0;
             lightColor.rgb *= ComputeShadowColor(shadow, light.shadowTint, light.penumbraTint);
         }
@@ -107,7 +107,6 @@ DirectLighting ShadeSurface_Directional(LightLoopContext lightLoopContext,
         lighting = ShadeSurface_Infinitesimal(preLightData, bsdfData, V, L, lightColor.rgb,
                                               light.diffuseDimmer, light.specularDimmer);
     }
-
     return lighting;
 }
 

@@ -23,7 +23,7 @@
 #define INDIRECT_DIFFUSE_TILE_SIZE 8
 
 // Epslon value used for the computation
-#define GI_TRACE_EPS 1.00024414
+#define GI_TRACE_EPS 4.00024414
 
 // Input depth pyramid texture
 TEXTURE2D_X(_DepthTexture);
@@ -73,7 +73,7 @@ bool RayMarch(float3 positionWS, float3 sampleDir, float3 normalWS, float2 posit
         float tx = (rayDirSS.x > 0 ? (_ScreenSize.x - rayOrigin.x) : rayOrigin.x) / rayDirSS.x;
         float ty = (rayDirSS.y > 0 ? (_ScreenSize.y - rayOrigin.y) : rayOrigin.y) / rayDirSS.y;
 
-        // Compàute the actual ray direction
+        // Compute the actual ray direction
         rayDir = min(abs(tx), abs(ty)) * normalize(rayDir);
 
         // Compute the reciprocal of the direction (not sure why tho ftm)
@@ -100,7 +100,6 @@ bool RayMarch(float3 positionWS, float3 sampleDir, float3 normalWS, float2 posit
             // If we do not want to intersect the skybox, it is more efficient to not trace too far.
             float maxDepth = -0.00000024; // 2^-22
             bounds.z = (rcpRayDir.z >= 0) ? 1 : maxDepth;
-
             float3 dist = bounds * rcpRayDir - (rayOrigin * rcpRayDir);
             tMax = Min3(dist.x, dist.y, dist.z);
         }
@@ -245,7 +244,7 @@ void TRACE_GLOBAL_ILLUMINATION(uint3 dispatchThreadId : SV_DispatchThreadID, uin
     PositionInputs posInput = GetPositionInput(fullResCoord, _ScreenSize.zw, deviceDepth, UNITY_MATRIX_I_VP, GetWorldToViewMatrix(), 0);
 #else
     PositionInputs posInput = GetPositionInput(currentCoord, _ScreenSize.zw, deviceDepth, UNITY_MATRIX_I_VP, GetWorldToViewMatrix(), 0);
-#endif 
+#endif
 
     // Compute the view direction (world space)
     float3 viewWS = GetWorldSpaceNormalizeViewDir(posInput.positionWS);
@@ -273,8 +272,8 @@ void TRACE_GLOBAL_ILLUMINATION(uint3 dispatchThreadId : SV_DispatchThreadID, uin
 // Input hit point texture that holds the NDC position if an intersection was found
 TEXTURE2D_X(_IndirectDiffuseHitPointTexture);
 // Depth buffer of the previous frame (full resolution)
-TEXTURE2D_X(_HistoryDepthTexture); 
-// Output indirect diffuse texture 
+TEXTURE2D_X(_HistoryDepthTexture);
+// Output indirect diffuse texture
 RW_TEXTURE2D_X(float4, _IndirectDiffuseTexture0RW);
 RW_TEXTURE2D_X(float4, _IndirectDiffuseTexture1RW);
 
@@ -328,11 +327,12 @@ void REPROJECT_GLOBAL_ILLUMINATION(uint3 dispatchThreadId : SV_DispatchThreadID,
     float hitPointDepth = LOAD_TEXTURE2D_X(_DepthTexture, hitPositionNDC * _ScreenSize.xy).x;
 
     // Flag that tracks if this ray lead to a valid result
-    bool invalid = false;
+    float invalid = 1.0f;
 
     // If this missed, we need to find something else to fallback on
     if (hitPositionNDC.x > 1.0)
-        invalid = true;
+        invalid = 0.0f;
+    //invalid = 1-hitPositionNDC;
 
     // Fetch the motion vector of the current target pixel
     float2 motionVectorNDC;
@@ -342,23 +342,17 @@ void REPROJECT_GLOBAL_ILLUMINATION(uint3 dispatchThreadId : SV_DispatchThreadID,
     float2 prevFrameUV  = prevFrameNDC * _ColorPyramidUvScaleAndLimitPrevFrame.xy;
 
     // If the previous value to read was out of screen, this is invalid, needs a fallback
-    if ((prevFrameUV.x < 0) 
-        || (prevFrameUV.x > _ColorPyramidUvScaleAndLimitPrevFrame.z) 
-        || (prevFrameUV.y < 0) 
-        || (prevFrameUV.y > _ColorPyramidUvScaleAndLimitPrevFrame.w))
-        invalid = true;
+    if ((prevFrameUV.x < 0)  || (prevFrameUV.x > _ColorPyramidUvScaleAndLimitPrevFrame.z)  || (prevFrameUV.y < 0)  || (prevFrameUV.y > _ColorPyramidUvScaleAndLimitPrevFrame.w))
+        invalid = 0.0f;
 
     // Grab the depth of the hit point and reject the history buffer if the depth is too different
     // TODO: Find a better metric
     float hitPointHistoryDepth = LOAD_TEXTURE2D_X(_HistoryDepthTexture, prevFrameNDC * _ScreenSize.xy).x;
     if (abs(hitPointHistoryDepth - hitPointDepth) > DEPTH_DIFFERENCE_THRESHOLD)
-        invalid = true;
+        invalid = 0.0f;
 
-    // Based on if the intersection was valid (or not, pick a source for the lighting)
-    float3 color = 0.0;
-    if (!invalid)
-        // The intersection was considered valid, we can read from the color pyramid
-        color = SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_linear_clamp_sampler, prevFrameUV, 0).rgb;
+
+     float3 color = SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_linear_clamp_sampler, prevFrameUV, 0).rgb * invalid;
 
     // TODO: Remove me when you can find where the nans come from
    // if (AnyIsNaN(color))
@@ -392,7 +386,7 @@ void REPROJECT_GLOBAL_ILLUMINATION(uint3 dispatchThreadId : SV_DispatchThreadID,
     // TODO: make this process not binary
     // Write the output to the target pixel
     _IndirectDiffuseTexture0RW[COORD_TEXTURE2D_X(currentCoord)] = float4(outYSH);
-    _IndirectDiffuseTexture1RW[COORD_TEXTURE2D_X(currentCoord)] = float4(outCoCg, invalid ? 0.4 : 1.0, length(motionVectorNDC * 10000.0f));
+    _IndirectDiffuseTexture1RW[COORD_TEXTURE2D_X(currentCoord)] = float4(outCoCg, (1.0f-invalid*0.8), length(motionVectorNDC * 10000.0f));
 }
 
 void ConvertYCoCgToRGBUtil(float4 inYSH, float2 inCoCg, float3 inNormal, out float3 outColor)
@@ -414,7 +408,7 @@ void ConvertYCoCgToRGBUtil(float4 inYSH, float2 inCoCg, float3 inNormal, out flo
     outColor = max(outColor, 0.0);
 }
 
-TEXTURE2D_X(_IndirectDiffuseTexture1); 
+TEXTURE2D_X(_IndirectDiffuseTexture1);
 
 [numthreads(INDIRECT_DIFFUSE_TILE_SIZE, INDIRECT_DIFFUSE_TILE_SIZE, 1)]
 void CONVERT_YCOCG_TO_RGB(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
@@ -453,12 +447,12 @@ void CONVERT_YCOCG_TO_RGB(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 gr
 
     // Convert the signal back to a color
     float3 color;
-    float4 ySH = _IndirectDiffuseTexture0RW[COORD_TEXTURE2D_X(currentCoord)]; 
+    float4 ySH = _IndirectDiffuseTexture0RW[COORD_TEXTURE2D_X(currentCoord)];
     float3 cocgB = LOAD_TEXTURE2D_X(_IndirectDiffuseTexture1, currentCoord).xyz;
     ConvertYCoCgToRGBUtil(ySH, cocgB.xy, normalData.normalWS, color);
 
     // We invert the tonemap
-    color = color / (1.0 - color);
+    color = color / (1 - color);
 
 
     // Does this pixel recieve SSGI?
@@ -467,16 +461,20 @@ void CONVERT_YCOCG_TO_RGB(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 gr
     //    cocgB.z = 0.0;
 
     // The mulitplication is wrong, but with all the approximations that we need to compensate a bit
-    // the fact that the signal was significantly attenuated (due to blurring in tonemapped space to reduce the blobbyness). 
+    // the fact that the signal was significantly attenuated (due to blurring in tonemapped space to reduce the blobbyness).
     // This has been experimentally tested. However, it needs more testing and potetially reverted if found more harmful than useful
-  
-    color *= 15.5 * (1-cocgB.z);
- 
-    float3 W = float3(0.2125, 0.7154, 0.0721);
-    float3 intensity = dot(color, W);
-    color = lerp(intensity, color, 7*(cocgB.z));
+  //  cocgB.z *= pow(cocgB.z*4,2);
 
-   // color *= 1-cocgB.z;
+
+    color *= 2.5 * (cocgB.z);
+    color *= 12.5 * (1-cocgB.z);
+    float3 W = float3(0.2126729, 0.7151522, 0.0721750);
+    float3 intensity = dot(color, W);
+    color = lerp(intensity, color, (1-cocgB.z) + (cocgB.z*3));
+
+
+
+    //color *= cocgB.z;
     // Output the color as well as the blend factor
     _IndirectDiffuseTexture0RW[COORD_TEXTURE2D_X(currentCoord)] = float4(color, cocgB.z);
 }

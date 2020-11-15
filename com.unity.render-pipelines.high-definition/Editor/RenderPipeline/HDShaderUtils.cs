@@ -55,18 +55,13 @@ namespace UnityEditor.Rendering.HighDefinition
         {
             { ShaderID.Lit, LitGUI.SetupMaterialKeywordsAndPass },
             { ShaderID.LitTesselation, LitGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.LayeredLit,  LayeredLitGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.LayeredLitTesselation, LayeredLitGUI.SetupMaterialKeywordsAndPass },
             // no entry for ShaderID.StackLit
             { ShaderID.Unlit, UnlitGUI.SetupUnlitMaterialKeywordsAndPass },
             // no entry for ShaderID.Fabric
             { ShaderID.Decal, DecalUI.SetupMaterialKeywordsAndPass },
             { ShaderID.TerrainLit, TerrainLitGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.AxF, AxFGUI.SetupMaterialKeywordsAndPass },
             { ShaderID.SG_Unlit, HDUnlitGUI.SetupMaterialKeywordsAndPass },
             { ShaderID.SG_Lit, LitShaderGraphGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.SG_Hair, LightingShaderGraphGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.SG_Fabric, LightingShaderGraphGUI.SetupMaterialKeywordsAndPass },
             { ShaderID.SG_StackLit, LightingShaderGraphGUI.SetupMaterialKeywordsAndPass },
             { ShaderID.SG_Decal, DecalGUI.SetupMaterialKeywordsAndPass },
             // no entry for ShaderID.SG_Decal
@@ -144,7 +139,7 @@ namespace UnityEditor.Rendering.HighDefinition
                 HDMetadata obj;
                 if(!shader.TryGetMetadataOfType<HDMetadata>(out obj))
                     throw new ArgumentException("Unknown shader");
-                
+
                 return obj.shaderID == ShaderID.SG_Unlit;
             }
             else
@@ -172,7 +167,7 @@ namespace UnityEditor.Rendering.HighDefinition
                 HDMetadata obj;
                 if(!shader.TryGetMetadataOfType<HDMetadata>(out obj))
                     throw new ArgumentException("Unknown shader");
-                
+
                 return obj.shaderID;
             }
             else
