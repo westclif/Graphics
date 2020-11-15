@@ -544,118 +544,17 @@ void EncodeIntoGBuffer( SurfaceData surfaceData
 
     // RT2 - 8:8:8:8
     uint materialFeatureId;
+    // In the case of standard or specular color we always convert to specular color parametrization before encoding,
+    // so decoding is more efficient (it allow better optimization for the compiler and save VGPR)
+    // This mean that on the decode side, MATERIALFEATUREFLAGS_LIT_SPECULAR_COLOR doesn't exist anymore
+    materialFeatureId = GBUFFER_LIT_STANDARD;
 
-    if (HasFlag(surfaceData.materialFeatures, MATERIALFEATUREFLAGS_LIT_SUBSURFACE_SCATTERING | MATERIALFEATUREFLAGS_LIT_TRANSMISSION))
-    {
-        // Reminder that during GBuffer pass we know statically material materialFeatures
-        if ((surfaceData.materialFeatures & (MATERIALFEATUREFLAGS_LIT_SUBSURFACE_SCATTERING | MATERIALFEATUREFLAGS_LIT_TRANSMISSION)) == (MATERIALFEATUREFLAGS_LIT_SUBSURFACE_SCATTERING | MATERIALFEATUREFLAGS_LIT_TRANSMISSION))
-            materialFeatureId = GBUFFER_LIT_TRANSMISSION_SSS;
-        else if ((surfaceData.materialFeatures & MATERIALFEATUREFLAGS_LIT_SUBSURFACE_SCATTERING) == MATERIALFEATUREFLAGS_LIT_SUBSURFACE_SCATTERING)
-            materialFeatureId = GBUFFER_LIT_SSS;
-        else
-            materialFeatureId = GBUFFER_LIT_TRANSMISSION;
+    float3 diffuseColor = surfaceData.baseColor;
+    float3 fresnel0     = surfaceData.specularColor;
 
-        // We perform the same encoding for SSS and transmission even if not used as it is the same cost
-        // Note that regarding EncodeIntoSSSBuffer, as the lit.shader IS the deferred shader (and the SSS fullscreen pass is based on deferred encoding),
-        // it know the details of the encoding, so it is fine to assume here how SSSBuffer0 is encoded
-
-        // For the SSS feature, the alpha channel is overwritten with (diffusionProfile | subsurfaceMask).
-        // It is done so that the SSS pass only has to read a single G-Buffer 0.
-        // We move specular occlusion to the red channel of the G-Buffer 2.
-        EncodeIntoSSSBuffer(ConvertSurfaceDataToSSSData(surfaceData), positionSS, outGBuffer0);
-
-        // We duplicate the alpha channel of the G-Buffer 0 (for diffusion profile).
-        // It allows us to delay reading the G-Buffer 0 until the end of the deferred lighting shader.
-        outGBuffer2.rgb = float3(surfaceData.specularOcclusion, surfaceData.thickness, outGBuffer0.a);
-    }
-    else if (HasFlag(surfaceData.materialFeatures, MATERIALFEATUREFLAGS_LIT_ANISOTROPY))
-    {
-        materialFeatureId = GBUFFER_LIT_ANISOTROPIC;
-
-        // Reconstruct the default tangent frame.
-        float3x3 frame = GetLocalFrame(surfaceData.normalWS);
-
-        // Compute the rotation angle of the actual tangent frame with respect to the default one.
-        float sinFrame = dot(surfaceData.tangentWS, frame[1]);
-        float cosFrame = dot(surfaceData.tangentWS, frame[0]);
-
-        // Define AnisoGGX(α, β, γ), where:
-        // α is the roughness corresponding to the direction of the tangent;
-        // β is the roughness corresponding to the direction of the bi-tangent;
-        // γ is the angle of rotation of the tangent frame around the normal.
-        //
-        // The following symmetry relations exist:
-        // 1st quadrant (Sin >= 0, Cos >  0): AnisoGGX(α, β, γ), where (0 <= γ < Pi/2)
-        // 2nd quadrant (Sin >  0, Cos <= 0): AnisoGGX(α, β, γ) == AnisoGGX(β, α, γ + Pi * 1/2)
-        // 3rd quadrant (Sin <= 0, Cos <  0): AnisoGGX(α, β, γ) == AnisoGGX(α, β, γ + Pi)
-        // 4th quadrant (Sin <  0, Cos >= 0): AnisoGGX(α, β, γ) == AnisoGGX(β, α, γ + Pi * 3/2)
-        // Handling of the interval end-points may be less rigorous to simplify programming.
-        // The only requirement is that the handling is consistent throughout.
-        bool quad2or4 = (sinFrame * cosFrame) < 0;
-
-        // Anisotropy = (α - β) / (α + β).
-        // Exchanging the roughness values α and β is equivalent to negating the value of anisotropy.
-    #if 0
-        // To avoid shading seams at the locations where anisotropy changes its sign,
-        // its magnitude must be the same (on both sides) after reconstruction from the G-buffer.
-        // This means that the hardware unit must perform rounding accurately (and consistently)
-        // before storing the value in the G-buffer.
-        float sfltAniso  = quad2or4 ? -surfaceData.anisotropy : surfaceData.anisotropy;
-        float anisotropy = sfltAniso * 0.5 + 0.5;
-    #else
-        // It turns out, certain hardware has poor rounding behavior:
-        // https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#3.2.3.6%20FLOAT%20-%3E%20UNORM
-        // Therefore, we must round manually to avoid the seams.
-        float uintAniso  = round(surfaceData.anisotropy * 127.5 + 127.5);
-              uintAniso  = quad2or4 ? 255 - uintAniso : uintAniso;
-        // We cannot represent the anisotropy value of 0 exactly, but it is of little
-        // importance since you can just use the isotropic material for that purpose.
-        float anisotropy = uintAniso * rcp(255);
-    #endif
-
-        // We need to convert the values of Sin and Cos to those appropriate for the 1st quadrant.
-        // To go from Q3 to Q1, we must rotate by Pi, so taking the absolute value suffices.
-        // To go from Q2 or Q4 to Q1, we must rotate by ((N + 1/2) * Pi), so we must
-        // take the absolute value and also swap Sin and Cos.
-        bool  storeSin = (abs(sinFrame) < abs(cosFrame)) != quad2or4;
-        // sin [and cos] are approximately linear up to [after] Pi/4 ± Pi.
-        float sinOrCos = min(abs(sinFrame), abs(cosFrame));
-        // To avoid storing redundant angles, we must convert from a node-centered representation
-        // to a cell-centered one, e.i. remap: [0.5/256, 255.5/256] -> [0, 1].
-        float remappedSinOrCos = Remap01(sinOrCos, sqrt(2) * 256.0/255.0, 0.5/255.0);
-
-        outGBuffer2.rgb = float3(anisotropy,
-                                 remappedSinOrCos,
-                                 PackFloatInt8bit(surfaceData.metallic, storeSin ? 1 : 0, 8));
-    }
-    else if (HasFlag(surfaceData.materialFeatures, MATERIALFEATUREFLAGS_LIT_IRIDESCENCE))
-    {
-        materialFeatureId = GBUFFER_LIT_IRIDESCENCE;
-
-        outGBuffer2.rgb = float3(surfaceData.iridescenceMask, surfaceData.iridescenceThickness,
-                                 PackFloatInt8bit(surfaceData.metallic, 0, 8));
-    }
-    else // Standard
-    {
-        // In the case of standard or specular color we always convert to specular color parametrization before encoding,
-        // so decoding is more efficient (it allow better optimization for the compiler and save VGPR)
-        // This mean that on the decode side, MATERIALFEATUREFLAGS_LIT_SPECULAR_COLOR doesn't exist anymore
-        materialFeatureId = GBUFFER_LIT_STANDARD;
-
-        float3 diffuseColor = surfaceData.baseColor;
-        float3 fresnel0     = surfaceData.specularColor;
-
-        if (!HasFlag(surfaceData.materialFeatures, MATERIALFEATUREFLAGS_LIT_SPECULAR_COLOR))
-        {
-            // Convert from the metallic parametrization.
-            diffuseColor = ComputeDiffuseColor(surfaceData.baseColor, surfaceData.metallic);
-            fresnel0     = ComputeFresnel0(surfaceData.baseColor, surfaceData.metallic, DEFAULT_SPECULAR_VALUE);
-        }
-
-        outGBuffer0.rgb = diffuseColor;               // sRGB RT
-        // outGBuffer2 is not sRGB, so use a fast encode/decode sRGB to keep precision
-        outGBuffer2.rgb = FastLinearToSRGB(fresnel0); // TODO: optimize
-    }
+    outGBuffer0.rgb = diffuseColor;               // sRGB RT
+    // outGBuffer2 is not sRGB, so use a fast encode/decode sRGB to keep precision
+    outGBuffer2.rgb = FastLinearToSRGB(fresnel0); // TODO: optimize
 
     // Ensure that surfaceData.coatMask is 0 if the feature is not enabled
     float coatMask = HasFlag(surfaceData.materialFeatures, MATERIALFEATUREFLAGS_LIT_CLEAR_COAT) ? surfaceData.coatMask : 0.0;
@@ -1013,7 +912,7 @@ void GetBSDFDataDebug(uint paramId, BSDFData bsdfData, inout float3 result, inou
             float3 vsGeomNormal = TransformWorldToViewDir(bsdfData.geomNormalWS);
             result = IsNormalized(vsGeomNormal) ?  vsGeomNormal * 0.5 + 0.5 : float3(1.0, 0.0, 0.0);
             break;
-        }       
+        }
     case DEBUGVIEW_LIT_BSDFDATA_IOR:
         result = saturate((bsdfData.ior - 1.0) / 1.5).xxx;
         break;
