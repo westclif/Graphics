@@ -133,8 +133,6 @@ namespace UnityEngine.Rendering.HighDefinition
             public ComputeShader computeGgxIblSampleDataCS;
             [Reload("Runtime/Material/GGXConvolution/GGXConvolve.shader")]
             public Shader GGXConvolvePS;
-            [Reload("Runtime/Material/Fabric/CharlieConvolve.shader")]
-            public Shader charlieConvolvePS;
             [Reload("Runtime/Lighting/AtmosphericScattering/OpaqueAtmosphericScattering.shader")]
             public Shader opaqueAtmosphericScatteringPS;
             [Reload("Runtime/Sky/HDRISky/HDRISky.shader")]

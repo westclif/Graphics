@@ -214,8 +214,7 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
 
                 // Is it worth sampling the shadow map?
                 if ((light.lightDimmer > 0) && (light.shadowDimmer > 0) && // Note: Volumetric can have different dimmer, thus why we test it here
-                    IsNonZeroBSDF(V, L, preLightData, bsdfData) &&
-                    !ShouldEvaluateThickObjectTransmission(V, L, preLightData, bsdfData, light.shadowIndex))
+                    IsNonZeroBSDF(V, L, preLightData, bsdfData))
                 {
                     context.shadowValue = GetDirectionalShadowAttenuation(context.shadowContext,
                                                                           posInput.positionSS, posInput.positionWS, GetNormalForShadowBias(bsdfData),

@@ -511,17 +511,9 @@ namespace UnityEngine.Rendering.HighDefinition
 
             m_MaterialList.ForEach(material => material.Build(asset, defaultResources));
 
-            if (m_Asset.currentPlatformRenderPipelineSettings.lightLoopSettings.supportFabricConvolution)
-            {
-                m_IBLFilterArray = new IBLFilterBSDF[2];
-                m_IBLFilterArray[0] = new IBLFilterGGX(defaultResources, m_MipGenerator);
-                m_IBLFilterArray[1] = new IBLFilterCharlie(defaultResources, m_MipGenerator);
-            }
-            else
-            {
-                m_IBLFilterArray = new IBLFilterBSDF[1];
-                m_IBLFilterArray[0] = new IBLFilterGGX(defaultResources, m_MipGenerator);
-            }
+
+            m_IBLFilterArray = new IBLFilterBSDF[1];
+            m_IBLFilterArray[0] = new IBLFilterGGX(defaultResources, m_MipGenerator);
 
             InitializeLightLoop(m_IBLFilterArray);
 
@@ -955,7 +947,7 @@ namespace UnityEngine.Rendering.HighDefinition
             {
                 HDUtils.DisplayMessageNotification("Unable to compile Default Material based on Lit.shader. Either there is a compile error in Lit.shader or the current platform / API isn't compatible.");
                 return false;
-            }            
+            }
 
 #if UNITY_EDITOR
             UnityEditor.BuildTarget activeBuildTarget = UnityEditor.EditorUserBuildSettings.activeBuildTarget;
