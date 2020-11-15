@@ -20,22 +20,6 @@ namespace UnityEditor.Rendering.HighDefinition
         //[MenuItem("Internal/HDRP/Test/Remove tessellation materials (not reversible)")]
         static void RemoveTessellationMaterials()
         {
-            var materials = Resources.FindObjectsOfTypeAll<Material>();
-
-            var litShader = Shader.Find("HDRP/Lit");
-            var layeredLitShader = Shader.Find("HDRP/LayeredLit");
-
-            foreach (var mat in materials)
-            {
-                if (mat.shader.name == "HDRP/LitTessellation")
-                {
-                    mat.shader = litShader;
-                    // We remove all keyword already present
-                    CoreEditorUtils.RemoveMaterialKeywords(mat);
-                    LitGUI.SetupMaterialKeywordsAndPass(mat);
-                    EditorUtility.SetDirty(mat);
-                }
-            }
         }
 
         [MenuItem("Edit/Render Pipeline/HD Render Pipeline/Export Sky to Image")]

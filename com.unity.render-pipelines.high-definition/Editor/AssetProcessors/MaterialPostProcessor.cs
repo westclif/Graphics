@@ -5,7 +5,6 @@ using System.Reflection;
 using UnityEngine;
 using UnityEditor.ShaderGraph;
 using UnityEngine.Rendering.HighDefinition;
-using UnityEditor.Rendering.HighDefinition.ShaderGraph;
 
 // Material property names
 using static UnityEngine.Rendering.HighDefinition.HDMaterialProperties;
@@ -328,36 +327,6 @@ namespace UnityEditor.Rendering.HighDefinition
         static void ShaderGraphStack(Material material, HDShaderUtils.ShaderID id)
         {
             Shader shader = material.shader;
-
-            if (shader.IsShaderGraph())
-            {
-                if (shader.TryGetMetadataOfType<HDMetadata>(out var obj))
-                {
-                    // Material coming from old cross pipeline shader (Unlit and PBR) are not synchronize correctly with their
-                    // shader graph. This code below ensure it is
-                    if (obj.migrateFromOldCrossPipelineSG) // come from PBR or Unlit cross pipeline SG?
-                    {
-                        var defaultProperties = new Material(material.shader);
-
-                        foreach (var floatToSync in s_ShadergraphStackFloatPropertiesToSynchronize)
-                            if (material.HasProperty(floatToSync))
-                                material.SetFloat(floatToSync, defaultProperties.GetFloat(floatToSync));
-
-                        defaultProperties = null;
-
-                        // Postprocess now that material is correctly sync
-                        bool isTransparent = material.HasProperty("_SurfaceType") && material.GetFloat("_SurfaceType") > 0.0f;
-                        bool alphaTest = material.HasProperty("_AlphaCutoffEnable") && material.GetFloat("_AlphaCutoffEnable") > 0.0f;
-
-                        material.renderQueue = isTransparent ? (int)HDRenderQueue.Priority.Transparent :
-                                                    alphaTest ? (int)HDRenderQueue.Priority.OpaqueAlphaTest : (int)HDRenderQueue.Priority.Opaque;
-
-                        material.SetFloat("_RenderQueueType", isTransparent ? (float)HDRenderQueue.RenderQueueType.Transparent : (float)HDRenderQueue.RenderQueueType.Opaque);
-                    }
-                        
-                }
-            }
-
             HDShaderUtils.ResetMaterialKeywords(material);
         }
 
@@ -402,7 +371,7 @@ namespace UnityEditor.Rendering.HighDefinition
 
             // Take the opportunity to remove _SupportDecals from Unlit as it is not suppose to be here
             if (HDShaderUtils.IsUnlitHDRPShader(material.shader))
-            {               
+            {
                 var serializedMaterial = new SerializedObject(material);
                 if (TryFindProperty(serializedMaterial, kSupportDecals, SerializedType.Integer, out var property, out _, out _))
                 {
@@ -536,7 +505,7 @@ namespace UnityEditor.Rendering.HighDefinition
                 const string s_MeshDecalsMAOSStr = "DBufferMesh_MAOS";
                 const string s_MeshDecals3RTStr = "DBufferMesh_3RT";
                 const string s_MeshDecalsForwardEmissive = "Mesh_Emissive";
-                
+
                 material.SetShaderPassEnabled(s_MeshDecalsMStr, true);
                 material.SetShaderPassEnabled(s_MeshDecalsSStr, true);
                 material.SetShaderPassEnabled(s_MeshDecalsMSStr, true);
@@ -564,7 +533,7 @@ namespace UnityEditor.Rendering.HighDefinition
             {
                 HDShaderUtils.ResetMaterialKeywords(material);
             }
-        }     
+        }
 
         static void FixIncorrectEmissiveColorSpace(Material material, HDShaderUtils.ShaderID id)
         {

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.ShaderGraph;
 using UnityEngine;
-using UnityEditor.Rendering.HighDefinition.ShaderGraph;
 
 namespace UnityEditor.Rendering.HighDefinition
 {
@@ -51,22 +50,6 @@ namespace UnityEditor.Rendering.HighDefinition
 
         // list of methods for resetting keywords
         delegate void MaterialResetter(Material material);
-        static Dictionary<ShaderID, MaterialResetter> k_MaterialResetters = new Dictionary<ShaderID, MaterialResetter>()
-        {
-            { ShaderID.Lit, LitGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.LitTesselation, LitGUI.SetupMaterialKeywordsAndPass },
-            // no entry for ShaderID.StackLit
-            { ShaderID.Unlit, UnlitGUI.SetupUnlitMaterialKeywordsAndPass },
-            // no entry for ShaderID.Fabric
-            { ShaderID.Decal, DecalUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.TerrainLit, TerrainLitGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.SG_Unlit, HDUnlitGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.SG_Lit, LitShaderGraphGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.SG_StackLit, LightingShaderGraphGUI.SetupMaterialKeywordsAndPass },
-            { ShaderID.SG_Decal, DecalGUI.SetupMaterialKeywordsAndPass },
-            // no entry for ShaderID.SG_Decal
-            // no entry for ShaderID.SG_Eye
-        };
 
         /// <summary>
         /// Reset the dedicated Keyword and Pass regarding the shader kind.
@@ -79,25 +62,6 @@ namespace UnityEditor.Rendering.HighDefinition
         /// </returns>
         public static bool ResetMaterialKeywords(Material material)
         {
-            MaterialResetter resetter;
-
-            // If we send a non HDRP material we don't throw an exception, the return type already handles errors.
-            try {
-                k_MaterialResetters.TryGetValue(GetShaderEnumFromShader(material.shader), out resetter);
-            } catch {
-                return false;
-            }
-
-            if (resetter != null)
-            {
-                CoreEditorUtils.RemoveMaterialKeywords(material);
-                // We need to reapply ToggleOff/Toggle keyword after reset via ApplyMaterialPropertyDrawers
-                MaterialEditor.ApplyMaterialPropertyDrawers(material);
-                resetter(material);
-                EditorUtility.SetDirty(material);
-                return true;
-            }
-
             return false;
         }
 
@@ -116,12 +80,7 @@ namespace UnityEditor.Rendering.HighDefinition
             if (shader == null)
                 return false;
 
-            if (shader.IsShaderGraph())
-            {
-                // All HDRP shader graphs should have HD metadata
-                return shader.TryGetMetadataOfType<HDMetadata>(out _);
-            }
-            else if (upgradable)
+            if (upgradable)
                 return s_ShaderPaths.Contains(shader.name);
             else
                 return shader.name.Contains("HDRP");
@@ -132,18 +91,7 @@ namespace UnityEditor.Rendering.HighDefinition
             if (shader == null)
                 return false;
 
-            if (shader.IsShaderGraph())
-            {
-                // Throw exception if no metadata is found
-                // This case should be handled by the Target
-                HDMetadata obj;
-                if(!shader.TryGetMetadataOfType<HDMetadata>(out obj))
-                    throw new ArgumentException("Unknown shader");
-
-                return obj.shaderID == ShaderID.SG_Unlit;
-            }
-            else
-                return shader.name == "HDRP/Unlit";
+            return shader.name == "HDRP/Unlit";
         }
 
         internal static string GetShaderPath(ShaderID id)
@@ -160,23 +108,10 @@ namespace UnityEditor.Rendering.HighDefinition
 
         internal static ShaderID GetShaderEnumFromShader(Shader shader)
         {
-            if (shader.IsShaderGraph())
-            {
-                // Throw exception if no metadata is found
-                // This case should be handled by the Target
-                HDMetadata obj;
-                if(!shader.TryGetMetadataOfType<HDMetadata>(out obj))
-                    throw new ArgumentException("Unknown shader");
-
-                return obj.shaderID;
-            }
-            else
-            {
-                var index = Array.FindIndex(s_ShaderPaths, m => m == shader.name);
-                if (index == -1)
-                    throw new ArgumentException("Unknown shader");
-                return (ShaderID)index;
-            }
+            var index = Array.FindIndex(s_ShaderPaths, m => m == shader.name);
+            if (index == -1)
+                throw new ArgumentException("Unknown shader");
+            return (ShaderID)index;
         }
     }
 }

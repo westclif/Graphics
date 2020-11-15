@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEditor.ShaderGraph;
-using UnityEditor.Rendering.HighDefinition.ShaderGraph;
 
 namespace UnityEditor.Rendering.HighDefinition
 {
@@ -23,17 +22,6 @@ namespace UnityEditor.Rendering.HighDefinition
             // Using Contains to include the Tessellation variants
             bool isBuiltInTerrainLit = shader.name.Contains("HDRP/TerrainLit");
             bool isBuiltInLit = shader.name.Contains("HDRP/Lit") || shader.name.Contains("HDRP/LayeredLit") || isBuiltInTerrainLit;
-
-            // Cache Shader Graph lookup data so we don't continually keep reloading graphs from disk.
-            // TODO: Should really be able to answer the questions "is shader graph" and "uses HDLitMasterNode" without
-            //       hitting disk on every invoke.
-            if (shader.IsShaderGraph())
-            {
-                if(shader.TryGetMetadataOfType<HDMetadata>(out var obj))
-                {
-                    isBuiltInLit |= obj.shaderID == HDShaderUtils.ShaderID.SG_Lit;
-                }
-            }
 
             // Caution: Currently only HDRP/TerrainLit is using keyword _ALPHATEST_ON with multi compile, we shouldn't test any other built in shader
             if (isBuiltInTerrainLit)
@@ -110,14 +98,6 @@ namespace UnityEditor.Rendering.HighDefinition
                         return true;
                 }
             }
-
-            // TODO: Tests for later
-            // We need to find a way to strip useless shader features for passes/shader stages that don't need them (example, vertex shaders won't ever need SSS Feature flag)
-            // This causes several problems:
-            // - Runtime code that "finds" shader variants based on feature flags might not find them anymore... thus fall backing to the "let's give a score to variant" code path that may find the wrong variant.
-            // - Another issue is that if a feature is declared without a "_" fall-back, if we strip the other variants, none may be left to use! This needs to be changed on our side.
-            //if (snippet.shaderType == ShaderType.Vertex && inputData.shaderKeywordSet.IsEnabled(m_FeatureSSS))
-            //    return true;
 
             return false;
         }
