@@ -1340,6 +1340,49 @@ namespace UnityEngine.Rendering.HighDefinition
             lightDimensions.z = light.range;
 
             lightData.boxLightSafeExtent = 1.0f;
+            if (lightData.lightType == GPULightType.ProjectorBox)
+            {
+                // Rescale for cookies and windowing.
+                lightData.right *= 2.0f / Mathf.Max(additionalLightData.shapeWidth, 0.001f);
+                lightData.up    *= 2.0f / Mathf.Max(additionalLightData.shapeHeight, 0.001f);
+
+                // If we have shadows, we need to shrink the valid range so that we don't leak light due to filtering going out of bounds.
+                if (shadowIndex >= 0)
+                {
+                    // We subtract a bit from the safe extent depending on shadow resolution
+                    float shadowRes = additionalLightData.shadowResolution.Value(m_ShadowInitParameters.shadowResolutionPunctual);
+                    shadowRes = Mathf.Clamp(shadowRes, 128.0f, 2048.0f); // Clamp in a somewhat plausible range.
+                    // The idea is to subtract as much as 0.05 for small resolutions.
+                    float shadowResFactor = Mathf.Lerp(0.05f, 0.01f, Mathf.Max(shadowRes / 2048.0f, 0.0f));
+                    lightData.boxLightSafeExtent = 1.0f - shadowResFactor;
+                }
+            }
+            else if (lightData.lightType == GPULightType.ProjectorPyramid)
+            {
+                // Get width and height for the current frustum
+                var spotAngle = light.spotAngle;
+
+                float frustumWidth, frustumHeight;
+
+                if (additionalLightData.aspectRatio >= 1.0f)
+                {
+                    frustumHeight = 2.0f * Mathf.Tan(spotAngle * 0.5f * Mathf.Deg2Rad);
+                    frustumWidth = frustumHeight * additionalLightData.aspectRatio;
+                }
+                else
+                {
+                    frustumWidth = 2.0f * Mathf.Tan(spotAngle * 0.5f * Mathf.Deg2Rad);
+                    frustumHeight = frustumWidth / additionalLightData.aspectRatio;
+                }
+
+                // Adjust based on the new parametrization.
+                lightDimensions.x = frustumWidth;
+                lightDimensions.y = frustumHeight;
+
+                // Rescale for cookies and windowing.
+                lightData.right *= 2.0f / frustumWidth;
+                lightData.up *= 2.0f / frustumHeight;
+            }
 
             if (lightData.lightType == GPULightType.Spot)
             {
@@ -1591,6 +1634,72 @@ namespace UnityEngine.Rendering.HighDefinition
                 lightVolumeData.lightPos = bound.center;
                 lightVolumeData.radiusSq = range * range;
                 lightVolumeData.featureFlags = (uint)LightFeatureFlags.Punctual;
+            }
+            else if (gpuLightType == GPULightType.Tube)
+            {
+                Vector3 dimensions = new Vector3(lightDimensions.x + 2 * range, 2 * range, 2 * range); // Omni-directional
+                Vector3 extents    = 0.5f * dimensions;
+                Vector3 centerVS   = positionVS;
+
+                bound.center   = centerVS;
+                bound.boxAxisX = extents.x * xAxisVS;
+                bound.boxAxisY = extents.y * yAxisVS;
+                bound.boxAxisZ = extents.z * zAxisVS;
+                bound.radius   = extents.x;
+                bound.scaleXY  = 1.0f;
+
+                lightVolumeData.lightPos   = centerVS;
+                lightVolumeData.lightAxisX = xAxisVS;
+                lightVolumeData.lightAxisY = yAxisVS;
+                lightVolumeData.lightAxisZ = zAxisVS;
+                lightVolumeData.boxInvRange.Set(1.0f / extents.x, 1.0f / extents.y, 1.0f / extents.z);
+                lightVolumeData.featureFlags = (uint)LightFeatureFlags.Area;
+            }
+            else if (gpuLightType == GPULightType.Rectangle)
+            {
+                Vector3 dimensions = new Vector3(lightDimensions.x + 2 * range, lightDimensions.y + 2 * range, range); // One-sided
+                Vector3 extents    = 0.5f * dimensions;
+                Vector3 centerVS   = positionVS + extents.z * zAxisVS;
+
+                float d = range + 0.5f * Mathf.Sqrt(lightDimensions.x * lightDimensions.x + lightDimensions.y * lightDimensions.y);
+
+                bound.center   = centerVS;
+                bound.boxAxisX = extents.x * xAxisVS;
+                bound.boxAxisY = extents.y * yAxisVS;
+                bound.boxAxisZ = extents.z * zAxisVS;
+                bound.radius   = Mathf.Sqrt(d * d + (0.5f * range) * (0.5f * range));
+                bound.scaleXY  = 1.0f;
+
+                lightVolumeData.lightPos   = centerVS;
+                lightVolumeData.lightAxisX = xAxisVS;
+                lightVolumeData.lightAxisY = yAxisVS;
+                lightVolumeData.lightAxisZ = zAxisVS;
+                lightVolumeData.boxInvRange.Set(1.0f / extents.x, 1.0f / extents.y, 1.0f / extents.z);
+                lightVolumeData.featureFlags = (uint)LightFeatureFlags.Area;
+            }
+            else if (gpuLightType == GPULightType.ProjectorBox)
+            {
+                Vector3 dimensions = new Vector3(lightDimensions.x, lightDimensions.y, range);  // One-sided
+                Vector3 extents    = 0.5f * dimensions;
+                Vector3 centerVS   = positionVS + extents.z * zAxisVS;
+
+                bound.center   = centerVS;
+                bound.boxAxisX = extents.x * xAxisVS;
+                bound.boxAxisY = extents.y * yAxisVS;
+                bound.boxAxisZ = extents.z * zAxisVS;
+                bound.radius   = extents.magnitude;
+                bound.scaleXY  = 1.0f;
+
+                lightVolumeData.lightPos   = centerVS;
+                lightVolumeData.lightAxisX = xAxisVS;
+                lightVolumeData.lightAxisY = yAxisVS;
+                lightVolumeData.lightAxisZ = zAxisVS;
+                lightVolumeData.boxInvRange.Set(1.0f / extents.x, 1.0f / extents.y, 1.0f / extents.z);
+                lightVolumeData.featureFlags = (uint)LightFeatureFlags.Punctual;
+            }
+            else if (gpuLightType == GPULightType.Disc)
+            {
+                //not supported at real time at the moment
             }
             else
             {

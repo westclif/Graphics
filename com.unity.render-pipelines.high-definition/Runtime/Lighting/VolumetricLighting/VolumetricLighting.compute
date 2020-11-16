@@ -625,6 +625,8 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
                                                                       centerWS, ray, t0, t1, dt, rndVal,
                                                                       extinction, anisotropy);
 
+            lighting.radianceNoPhase.rgb *= SampleSkyTexture(ray.centerDirWS, 4.0, 0).rgb *2 + 1;
+
             aggregateLighting.radianceNoPhase  += lighting.radianceNoPhase;
             aggregateLighting.radianceComplete += lighting.radianceComplete;
         }
@@ -728,7 +730,16 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
        // float3 probeRadiance = giColor * TransmittanceIntegralHomogeneousMedium(extinction, dt) ;
         float3 probeRadiance = giColor * TransmittanceIntegralHomogeneousMedium(extinction, dt) ;
         // Accumulate radiance along the ray.
+
+    //     probeRadiance += (SampleSkyTexture(ray.centerDirWS, 0.0, 0).rgb)*25 * blendValue.a;
+
+      //  probeRadiance = 0;
+
+      //  scattering *= (SampleSkyTexture(ray.centerDirWS, 0.0, 0).rgb);
+
         totalRadiance += transmittance * scattering * (phase * blendValue.rgb + probeRadiance);
+
+
 
         // Compute the optical depth up to the center of the interval.
         opticalDepth += 0.5 * blendValue.a;
@@ -740,6 +751,9 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
         // See "A Fresh Look at Generalized Sampling", p. 51.
         // TODO: re-enable tone mapping after implementing pre-exposure.
         _VBufferLighting[voxelCoord] = LinearizeRGBD(float4(/*FastTonemap*/(totalRadiance), opticalDepth)) * float4(GetCurrentExposureMultiplier().xxx, 1);
+
+
+
 
         // Compute the optical depth up to the end of the interval.
         opticalDepth += 0.5 * blendValue.a;
@@ -844,6 +858,7 @@ void VolumetricLighting(uint3 dispatchThreadId : SV_DispatchThreadID,
         float linearDepth = LinearEyeDepth(deviceDepth, _ZBufferParams);
 
         color = LOAD_TEXTURE2D_X(_GI, pixelCoord).rgb;
+        // color += SampleSkyTexture(rayDirWS, 4.0, 0).rgb*55;
 
         ray.geomDist = linearDepth * rcp(dot(ray.jitterDirWS, F));
 

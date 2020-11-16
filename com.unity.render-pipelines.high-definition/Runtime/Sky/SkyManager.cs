@@ -816,11 +816,10 @@ namespace UnityEngine.Rendering.HighDefinition
             }
         }
 
-        public void UpdateEnvironment(HDCamera hdCamera, ScriptableRenderContext renderContext, Light sunLight, int frameIndex, CommandBuffer cmd)
-        {
-            SkyAmbientMode ambientMode = hdCamera.volumeStack.GetComponent<VisualEnvironment>().skyAmbientMode.value;
+        public void UpdateEnvironment(HDCamera hdCamera, ScriptableRenderContext renderContext, Light sunLight, int frameIndex, CommandBuffer cmd) {
+            SkyAmbientMode ambientMode = SkyAmbientMode.Dynamic;
 
-            UpdateEnvironment(hdCamera, renderContext, hdCamera.lightingSky, sunLight, m_UpdateRequired, ambientMode == SkyAmbientMode.Dynamic, false, ambientMode, frameIndex, cmd);
+            UpdateEnvironment(hdCamera, renderContext, hdCamera.lightingSky, sunLight, m_UpdateRequired, true, false, ambientMode, frameIndex, cmd);
 
             // Preview camera will have a different sun, therefore the hash for the static lighting sky will change and force a recomputation
             // because we only maintain one static sky. Since we don't care that the static lighting may be a bit different in the preview we never recompute

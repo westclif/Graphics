@@ -147,21 +147,12 @@ void RectangularLightApplyBarnDoor(inout LightData lightData, float3 pointPositi
 float3 EvaluateCookie_Directional(LightLoopContext lightLoopContext, DirectionalLightData light,
                                   float3 lightToSample)
 {
-
-    // Translate and rotate 'positionWS' into the light space.
-    // 'light.right' and 'light.up' are pre-scaled on CPU.
-    float3x3 lightToWorld = float3x3(light.right, light.up, light.forward);
-    float3   positionLS   = mul(lightToSample, transpose(lightToWorld));
-
-    // Perform orthographic projection.
-    float2 positionCS  = positionLS.xy;
-
     // Remap the texture coordinates from [-1, 1]^2 to [0, 1]^2.
-    float2 positionNDC = positionCS * 0.5 + 0.5;
+    lightToSample.xz *= 0.01;
+    float2 positionNDC = lightToSample.xz*0.5 + 0.5;
 
     // Tile texture for cookie in repeat mode
-    if (light.cookieMode == COOKIEMODE_REPEAT)
-        positionNDC = frac(positionNDC);
+    positionNDC = frac(positionNDC);
 
     // We let the sampler handle clamping to border.
     return SampleCookie2D(positionNDC, light.cookieScaleOffset);

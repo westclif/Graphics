@@ -241,7 +241,7 @@ namespace UnityEngine.Rendering.HighDefinition
             }
         }
 
-        [Range(0.0f, 16.0f), SerializeField, FormerlySerializedAs("volumetricDimmer")]
+        [Range(0.0f, 199.0f), SerializeField, FormerlySerializedAs("volumetricDimmer")]
         float m_VolumetricDimmer = 1.0f;
         /// <summary>
         /// Get/Set the light dimmer / multiplier on volumetric effects, between 0 and 16.
@@ -254,7 +254,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 if (m_VolumetricDimmer == value)
                     return;
 
-                m_VolumetricDimmer = Mathf.Clamp(value, 0.0f, 16.0f);
+                m_VolumetricDimmer = Mathf.Clamp(value, 0.0f, 199.0f);
             }
         }
 
@@ -2021,7 +2021,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 // ease out and invert the curve, give more importance to closer distances
                 distance01 = 1.0f - Mathf.Pow(distance01, 2);
 
-                // normalized ratio between light range and distance 
+                // normalized ratio between light range and distance
                 float range01 = Mathf.Clamp01(visibleLight.range / Vector3.Distance(camera.transform.position, visibleLight.GetPosition()));
 
                 float scaleFactor01 = Mathf.Max(distance01, range01);

@@ -143,7 +143,6 @@ void Frag(PackedVaryingsToPS packedInput,
     // Init in debug display mode to quiet warning
 #ifdef OUTPUT_SPLIT_LIGHTING
     outDiffuseLighting = 0;
-    ENCODE_INTO_SSSBUFFER(surfaceData, posInput.positionSS, outSSSBuffer);
 #endif
 
 
