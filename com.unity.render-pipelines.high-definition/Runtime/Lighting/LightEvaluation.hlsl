@@ -144,18 +144,48 @@ void RectangularLightApplyBarnDoor(inout LightData lightData, float3 pointPositi
 // Directional Light evaluation helper
 //-----------------------------------------------------------------------------
 
+uniform half4		_Azure_DynamicCloudLayer1Direction, _Azure_DynamicCloudLayer1Color1, _Azure_DynamicCloudLayer1Color2;
+uniform half        _Azure_DynamicCloudLayer1Altitude, _Azure_DynamicCloudLayer1Density, _DynamicLightningColor;
+
+TEXTURE2D(_Azure_CloudNoise);
+SAMPLER(sampler_Azure_CloudNoise);
+
 float3 EvaluateCookie_Directional(LightLoopContext lightLoopContext, DirectionalLightData light,
                                   float3 lightToSample)
 {
     // Remap the texture coordinates from [-1, 1]^2 to [0, 1]^2.
-    lightToSample.xz *= 0.01;
+
+ //   lightToSample = GetAbsolutePositionWS(lightToSample);
+                                            //       lightToSample -= _WorldSpaceCameraPos.xyz;
+
+
+    lightToSample.xz *= 0.001;
     float2 positionNDC = lightToSample.xz*0.5 + 0.5;
 
+  float2 CloudPos = lightToSample.xz * 0.08 * _Azure_DynamicCloudLayer1Altitude;
+  float2 cloudSpeed = _Azure_DynamicCloudLayer1Direction.xy;
+  float4 tex1 = SAMPLE_TEXTURE2D_LOD(_Azure_CloudNoise, sampler_Azure_CloudNoise, CloudPos.xy * 0.25 - 0.005 + cloudSpeed, 1);
+  float4 tex2 = SAMPLE_TEXTURE2D_LOD(_Azure_CloudNoise, sampler_Azure_CloudNoise, CloudPos.xy * 0.35 -0.0065 + cloudSpeed, 0);
+
+  float noise1 = pow(tex1.g + tex2.g, 0.1);
+  float noise2 = pow(tex2.b * tex1.r, 0.25);
+
+  float3 cloud1 = _Azure_DynamicCloudLayer1Color1.rgb * (1-noise1);
+  float3 cloud2 = lerp(_Azure_DynamicCloudLayer1Color1.rgb, _Azure_DynamicCloudLayer1Color2.rgb*(1 + _DynamicLightningColor*23), noise2) * 2.5;
+  float3 cloud  = lerp(cloud1, cloud2, noise1 * noise2);
+  float mixCloud = saturate(pow(noise1 * noise2, _Azure_DynamicCloudLayer1Density));
+
+  //Apply Clouds.
+  float3 OutputColor =  saturate( pow(cloud.r*mixCloud.r+0.066,2));
+
+  return OutputColor;
+
+
     // Tile texture for cookie in repeat mode
-    positionNDC = frac(positionNDC);
+//    positionNDC = frac(positionNDC);
 
     // We let the sampler handle clamping to border.
-    return SampleCookie2D(positionNDC, light.cookieScaleOffset);
+   // return SampleCookie2D(positionNDC, light.cookieScaleOffset);
 }
 
 // Returns unassociated (non-premultiplied) color with alpha (attenuation).
@@ -181,15 +211,10 @@ float4 EvaluateLight_Directional(LightLoopContext lightLoopContext, PositionInpu
     }
 #endif
 
-#ifndef LIGHT_EVALUATION_NO_COOKIE
-    if (light.cookieMode != COOKIEMODE_NONE)
-    {
-        float3 lightToSample = posInput.positionWS - light.positionRWS;
-        float3 cookie = EvaluateCookie_Directional(lightLoopContext, light, lightToSample);
 
-        color.rgb *= cookie;
-    }
-#endif
+    float3 lightToSample =  posInput.positionWS - light.positionRWS;
+    float3 cookie = EvaluateCookie_Directional(lightLoopContext, light, lightToSample);
+    color.rgb *= cookie;
 
     return color;
 }

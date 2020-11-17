@@ -51,11 +51,8 @@ namespace UnityEngine.Rendering.HighDefinition
         [Serializable, ReloadGroup]
         public sealed class ShaderGraphResources
         {
-            [Reload("Runtime/RenderPipelineResources/ShaderGraph/AutodeskInteractive.ShaderGraph")]
             public Shader autodeskInteractive;
-            [Reload("Runtime/RenderPipelineResources/ShaderGraph/AutodeskInteractiveMasked.ShaderGraph")]
             public Shader autodeskInteractiveMasked;
-            [Reload("Runtime/RenderPipelineResources/ShaderGraph/AutodeskInteractiveTransparent.ShaderGraph")]
             public Shader autodeskInteractiveTransparent;
         }
 

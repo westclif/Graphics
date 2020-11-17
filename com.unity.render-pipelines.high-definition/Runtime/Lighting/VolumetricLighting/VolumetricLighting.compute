@@ -152,10 +152,12 @@ float noisep(float3 x)
                    lerp( hash(n+270.0), hash(n+271.0),f.x),f.y),f.z);
 }
 
+
 float ScrollNoise(float3 pos, float scale, float amount, float bias = -0.03, float mult = 2.0)
 {
-    //scale in movement direction
-    pos  /= float3(0.5 + _AzureWindSpeedWindTiling.x*0.5, 1, 0.5 +_AzureWindSpeedWindTiling.y*0.5);
+
+
+    pos  /= float3(0.5 + abs(_AzureWindSpeedWindTiling.x)*0.5, 1, 0.5 +abs(_AzureWindSpeedWindTiling.y)*0.5);
 	float noiseScale = scale;
 	float3 noiseScroll = float3(_AzureWindSpeedWindTiling.x, 0.2, _AzureWindSpeedWindTiling.y) * _Time.yyy;
 	float3 q = pos - noiseScroll;
@@ -500,7 +502,7 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
                                   PositionInputs posInput, uint tileIndex, int groupIdx, JitteredRay ray, float3 giColor)
 {
     uint lightCount, lightStart;
-
+    float3 skyColor = SampleSkyTexture(ray.centerDirWS, 2.0, 0).rgb;
 #ifdef USE_BIG_TILE_LIGHTLIST
     // Offset for stereo rendering
     tileIndex += unity_StereoEyeIndex * _NumTileBigTileX * _NumTileBigTileY;
@@ -625,7 +627,8 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
                                                                       centerWS, ray, t0, t1, dt, rndVal,
                                                                       extinction, anisotropy);
 
-            lighting.radianceNoPhase.rgb *= SampleSkyTexture(ray.centerDirWS, 4.0, 0).rgb *2 + 1;
+            lighting.radianceNoPhase.rgb *= skyColor *2 + 1;
+
 
             aggregateLighting.radianceNoPhase  += lighting.radianceNoPhase;
             aggregateLighting.radianceComplete += lighting.radianceComplete;
@@ -728,18 +731,9 @@ void FillVolumetricLightingBuffer(LightLoopContext context, uint featureFlags,
         // Integrate the contribution of the probe over the interval.
         // Integral{a, b}{Transmittance(0, t) * L_s(t) dt} = Transmittance(0, a) * Integral{a, b}{Transmittance(0, t - a) * L_s(t) dt}.
        // float3 probeRadiance = giColor * TransmittanceIntegralHomogeneousMedium(extinction, dt) ;
-        float3 probeRadiance = giColor * TransmittanceIntegralHomogeneousMedium(extinction, dt) ;
-        // Accumulate radiance along the ray.
-
-    //     probeRadiance += (SampleSkyTexture(ray.centerDirWS, 0.0, 0).rgb)*25 * blendValue.a;
-
-      //  probeRadiance = 0;
-
-      //  scattering *= (SampleSkyTexture(ray.centerDirWS, 0.0, 0).rgb);
-
+        float3 probeRadiance = giColor * TransmittanceIntegralHomogeneousMedium(extinction, dt);
+        probeRadiance += skyColor *2 + 0.2;
         totalRadiance += transmittance * scattering * (phase * blendValue.rgb + probeRadiance);
-
-
 
         // Compute the optical depth up to the center of the interval.
         opticalDepth += 0.5 * blendValue.a;

@@ -590,10 +590,10 @@ namespace UnityEngine.Rendering.HighDefinition
                                                dimension: TextureDimension.Tex3D, enableRandomWrite: true, name: "VBufferLighting");
 
 
-            m_MaxZMask8x = RTHandles.Alloc(Vector2.one * 0.125f, TextureXR.slices, dimension: TextureXR.dimension, colorFormat: GraphicsFormat.R32_SFloat, 
+            m_MaxZMask8x = RTHandles.Alloc(Vector2.one * 0.125f, TextureXR.slices, dimension: TextureXR.dimension, colorFormat: GraphicsFormat.R32_SFloat,
                                     enableRandomWrite: true, name: "MaxZ mask 8x");
 
-            m_MaxZMask = RTHandles.Alloc(Vector2.one / 16.0f, TextureXR.slices, dimension: TextureXR.dimension, colorFormat: GraphicsFormat.R32_SFloat, 
+            m_MaxZMask = RTHandles.Alloc(Vector2.one / 16.0f, TextureXR.slices, dimension: TextureXR.dimension, colorFormat: GraphicsFormat.R32_SFloat,
                                                 enableRandomWrite: true, name: "MaxZ mask");
 
             m_DilatedMaxZMask = RTHandles.Alloc(Vector2.one / 16.0f, TextureXR.slices, dimension: TextureXR.dimension, colorFormat: GraphicsFormat.R32_SFloat,
