@@ -485,7 +485,6 @@ namespace UnityEngine.Rendering.HighDefinition
             m_VtBufferManager = new VTBufferManager(asset);
             m_VTDebugBlit = CoreUtils.CreateEngineMaterial(defaultResources.shaders.debugViewVirtualTexturingBlit);
 #endif
-
             m_SharedRTManager.Build(asset);
             m_PostProcessSystem = new PostProcessSystem(asset, defaultResources);
             m_AmbientOcclusionSystem = new AmbientOcclusionSystem(asset, defaultResources);
@@ -5934,7 +5933,7 @@ namespace UnityEngine.Rendering.HighDefinition
         /// Overrides the current camera, changing all the matrices and view parameters for the new one.
         /// It allows you to render objects from another camera, which can be useful in custom passes for example.
         /// </summary>
-        internal struct OverrideCameraRendering : IDisposable
+        public struct OverrideCameraRendering : IDisposable
         {
             CommandBuffer   cmd;
             Camera          overrideCamera;

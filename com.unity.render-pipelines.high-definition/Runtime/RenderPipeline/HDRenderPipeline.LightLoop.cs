@@ -700,7 +700,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 using (var builder = renderGraph.AddRenderPass<VolumetricLightingPassData>("Volumetric Lighting", out var passData))
                 {
                     // TODO RENDERGRAPH
-                    //builder.EnableAsyncCompute(hdCamera.frameSettings.VolumetricLightingRunsAsync());
+                //    builder.EnableAsyncCompute(true);
 
                     passData.parameters = parameters;
                     if (passData.parameters.tiledLighting)
@@ -708,7 +708,7 @@ namespace UnityEngine.Rendering.HighDefinition
                     passData.densityBuffer = builder.ReadTexture(densityBuffer);
                     passData.depthTexture = builder.ReadTexture(depthTexture);
                     passData.maxZBuffer = builder.ReadTexture(maxZBuffer);
-                    passData.giBuffer = builder.ReadTexture(giBuffer);
+                    passData.giBuffer =  builder.ReadTexture(giBuffer);
 
                     float tileSize = 0;
                     Vector3Int viewportSize = ComputeVolumetricViewportSize(hdCamera, ref tileSize);

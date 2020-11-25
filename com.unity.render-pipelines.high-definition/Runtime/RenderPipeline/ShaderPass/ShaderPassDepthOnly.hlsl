@@ -11,20 +11,7 @@ PackedVaryingsType Vert(AttributesMesh inputMesh)
 {
     VaryingsType varyingsType;
 
-#if (SHADERPASS == SHADERPASS_DEPTH_ONLY) && defined(HAVE_RECURSIVE_RENDERING) && !defined(SCENESELECTIONPASS) && !defined(SCENEPICKINGPASS)
-    // If we have a recursive raytrace object, we will not render it.
-    // As we don't want to rely on renderqueue to exclude the object from the list,
-    // we cull it by settings position to NaN value.
-    // TODO: provide a solution to filter dyanmically recursive raytrace object in the DrawRenderer
-    if (_EnableRecursiveRayTracing && _RayTracing > 0.0)
-    {
-        ZERO_INITIALIZE(VaryingsType, varyingsType); // Divide by 0 should produce a NaN and thus cull the primitive.
-    }
-    else
-#endif
-    {
-        varyingsType.vmesh = VertMesh(inputMesh);
-    }
+    varyingsType.vmesh = VertMesh(inputMesh);
 
     return PackVaryingsType(varyingsType);
 }
@@ -104,17 +91,6 @@ void Frag(  PackedVaryingsToPS packedInput
 #elif defined(SCENEPICKINGPASS)
     outColor = _SelectionID;
 #else
-
-    // Depth and Alpha to coverage
-    #ifdef WRITE_MSAA_DEPTH
-        // In case we are rendering in MSAA, reading the an MSAA depth buffer is way too expensive. To avoid that, we export the depth to a color buffer
-        depthColor = packedInput.vmesh.positionCS.z;
-
-        #ifdef _ALPHATOMASK_ON
-        // Alpha channel is used for alpha to coverage
-        depthColor.a = SharpenAlpha(builtinData.opacity, builtinData.alphaClipTreshold);
-        #endif
-    #endif
 
     #if defined(WRITE_NORMAL_BUFFER)
     EncodeIntoNormalBuffer(ConvertSurfaceDataToNormalData(surfaceData), outNormalBuffer);

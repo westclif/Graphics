@@ -27,13 +27,13 @@ namespace UnityEngine.Rendering.HighDefinition
     // Try to keep data grouped by access and rendering system as much as possible (fog params or light params together for example).
     // => Don't move a float parameter away from where it belongs for filling a hole. Add padding in this case.
     [GenerateHLSL(needAccessors = false, generateCBuffer = true, constantRegister = (int)ConstantRegister.Global)]
-    unsafe struct ShaderVariablesGlobal
+    public unsafe struct ShaderVariablesGlobal
     {
         public const int RenderingLightLayersMask       = 0x000000FF;
         public const int RenderingLightLayersMaskShift  = 0;
         public const int RenderingDecalLayersMask       = 0x0000FF00;
         public const int RenderingDecalLayersMaskShift  = 8;
-        public const int DefaultRenderingLayerMask      = 0x0101;       
+        public const int DefaultRenderingLayerMask      = 0x0101;
 
         // TODO: put commonly used vars together (below), and then sort them by the frequency of use (descending).
         // Note: a matrix is 4 * 4 * 4 = 64 bytes (1x cache line), so no need to sort those.

@@ -16,10 +16,7 @@
 // Configuration
 //-----------------------------------------------------------------------------
 
-// Choose between Lambert diffuse and Disney diffuse (enable only one of them)
- #define USE_DIFFUSE_LAMBERT_BRDF
-
-//#define LIT_USE_GGX_ENERGY_COMPENSATION
+#define USE_DIFFUSE_LAMBERT_BRDF
 
 // Enable reference mode for IBL and area lights
 // Both reference define below can be define only if LightLoop is present, else we get a compile error
@@ -47,8 +44,8 @@ TEXTURE2D_X(_LightLayersTexture);
 TEXTURE2D_X(_ShadowMaskTexture); // Alias for shadow mask, so we don't need to know which gbuffer is used for shadow mask
 #endif
 
-#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/LTCAreaLight/LTCAreaLight.hlsl"
-#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/PreIntegratedFGD/PreIntegratedFGD.hlsl"
+//#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/LTCAreaLight/LTCAreaLight.hlsl"
+//#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/PreIntegratedFGD/PreIntegratedFGD.hlsl"
 
 //-----------------------------------------------------------------------------
 // Definition

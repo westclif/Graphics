@@ -151,11 +151,6 @@ VaryingsMeshType VertMesh(AttributesMesh input)
     float4 tangentWS = float4(TransformObjectToWorldDir(input.tangentOS.xyz), input.tangentOS.w);
 #endif
 
-    // Do vertex modification in camera relative space (if enable)
-#if defined(HAVE_VERTEX_MODIFICATION)
-    ApplyVertexModification(input, normalWS, positionRWS, _TimeParameters.xyz);
-#endif
-
 #ifdef TESSELLATION_ON
     output.positionRWS = positionRWS;
     output.normalWS = normalWS;

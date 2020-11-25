@@ -10,23 +10,10 @@ Shader "HDRP/Lit"
         [MainTexture] _BaseColorMap("BaseColorMap", 2D) = "white" {}
         [HideInInspector] _BaseColorMap_MipInfo("_BaseColorMap_MipInfo", Vector) = (0, 0, 0, 0)
 
-        _Metallic("_Metallic", Range(0.0, 1.0)) = 0
-        _Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
-        _MaskMap("MaskMap", 2D) = "white" {}
-        _MetallicRemapMin("MetallicRemapMin", Float) = 0.0
-        _MetallicRemapMax("MetallicRemapMax", Float) = 1.0
-        _SmoothnessRemapMin("SmoothnessRemapMin", Float) = 0.0
-        _SmoothnessRemapMax("SmoothnessRemapMax", Float) = 1.0
-        _AORemapMin("AORemapMin", Float) = 0.0
-        _AORemapMax("AORemapMax", Float) = 1.0
+
 
         _NormalMap("NormalMap", 2D) = "bump" {}     // Tangent space normal map
-        _NormalMapOS("NormalMapOS", 2D) = "white" {} // Object space normal map - no good default value
         _NormalScale("_NormalScale", Range(0.0, 8.0)) = 1
-
-        _BentNormalMap("_BentNormalMap", 2D) = "bump" {}
-        _BentNormalMapOS("_BentNormalMapOS", 2D) = "white" {}
-
         _HeightMap("HeightMap", 2D) = "black" {}
         // Caution: Default value of _HeightAmplitude must be (_HeightMax - _HeightMin) * 0.01
         // Those two properties are computed from the ones exposed in the UI and depends on the displaement mode so they are separate because we don't want to lose information upon displacement mode change.
@@ -241,45 +228,16 @@ Shader "HDRP/Lit"
     #pragma shader_feature_local _ALPHATOMASK_ON
     #pragma shader_feature_local _DEPTHOFFSET_ON
     #pragma shader_feature_local _DOUBLESIDED_ON
-    #pragma shader_feature_local _ _VERTEX_DISPLACEMENT _PIXEL_DISPLACEMENT
-    #pragma shader_feature_local _VERTEX_DISPLACEMENT_LOCK_OBJECT_SCALE
-    #pragma shader_feature_local _DISPLACEMENT_LOCK_TILING_SCALE
-    #pragma shader_feature_local _PIXEL_DISPLACEMENT_LOCK_OBJECT_SCALE
-    #pragma shader_feature_local _ _REFRACTION_PLANE _REFRACTION_SPHERE _REFRACTION_THIN
-
-    #pragma shader_feature_local _ _EMISSIVE_MAPPING_PLANAR _EMISSIVE_MAPPING_TRIPLANAR _EMISSIVE_MAPPING_BASE
-    #pragma shader_feature_local _ _MAPPING_PLANAR _MAPPING_TRIPLANAR
-    #pragma shader_feature_local _NORMALMAP_TANGENT_SPACE
-    #pragma shader_feature_local _ _REQUIRE_UV2 _REQUIRE_UV3
+   // #pragma shader_feature_local _ _REFRACTION_PLANE _REFRACTION_SPHERE _REFRACTION_THIN
 
     #pragma shader_feature_local _NORMALMAP
-    #pragma shader_feature_local _MASKMAP
-    #pragma shader_feature_local _BENTNORMALMAP
     #pragma shader_feature_local _EMISSIVE_COLOR_MAP
 
-    // _ENABLESPECULAROCCLUSION keyword is obsolete but keep here for compatibility. Do not used
-    // _ENABLESPECULAROCCLUSION and _SPECULAR_OCCLUSION_X can't exist at the same time (the new _SPECULAR_OCCLUSION replace it)
-    // When _ENABLESPECULAROCCLUSION is found we define _SPECULAR_OCCLUSION_X so new code to work
-    #pragma shader_feature_local _ENABLESPECULAROCCLUSION
-    #pragma shader_feature_local _ _SPECULAR_OCCLUSION_NONE _SPECULAR_OCCLUSION_FROM_BENT_NORMAL_MAP
-    #ifdef _ENABLESPECULAROCCLUSION
-    #define _SPECULAR_OCCLUSION_FROM_BENT_NORMAL_MAP
-    #endif
-
-    #pragma shader_feature_local _HEIGHTMAP
-    #pragma shader_feature_local _TANGENTMAP
-    #pragma shader_feature_local _ANISOTROPYMAP
     #pragma shader_feature_local _DETAIL_MAP
-    #pragma shader_feature_local _SUBSURFACE_MASK_MAP
-    #pragma shader_feature_local _THICKNESSMAP
-    #pragma shader_feature_local _IRIDESCENCE_THICKNESSMAP
-    #pragma shader_feature_local _SPECULARCOLORMAP
-    #pragma shader_feature_local _TRANSMITTANCECOLORMAP
 
     #pragma shader_feature_local _DISABLE_DECALS
     #pragma shader_feature_local _DISABLE_SSR
     #pragma shader_feature_local _DISABLE_SSR_TRANSPARENT
-    #pragma shader_feature_local _ENABLE_GEOMETRIC_SPECULAR_AA
 
     // Keyword for transparent
     #pragma shader_feature _SURFACE_TYPE_TRANSPARENT
@@ -307,11 +265,6 @@ Shader "HDRP/Lit"
     #define HAVE_VERTEX_MODIFICATION
 
     #define SUPPORT_BLENDMODE_PRESERVE_SPECULAR_LIGHTING
-
-    // If we use subsurface scattering, enable output split lighting (for forward pass)
-    #if defined(_MATERIAL_FEATURE_SUBSURFACE_SCATTERING) && !defined(_SURFACE_TYPE_TRANSPARENT)
-    #define OUTPUT_SPLIT_LIGHTING
-    #endif
 
     #if defined(_TRANSPARENT_WRITES_MOTION_VEC) && defined(_SURFACE_TYPE_TRANSPARENT)
     #define _WRITE_TRANSPARENT_MOTION_VECTOR
@@ -449,8 +402,6 @@ Shader "HDRP/Lit"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
 
             #pragma multi_compile _ DEBUG_DISPLAY
-            #pragma multi_compile _ LIGHTMAP_ON
-            #pragma multi_compile _ DIRLIGHTMAP_COMBINED
             #pragma multi_compile _ DYNAMICLIGHTMAP_ON
             #pragma multi_compile _ SHADOWS_SHADOWMASK
             // Setup DECALS_OFF so the shader stripper can remove variants

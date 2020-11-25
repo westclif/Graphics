@@ -108,9 +108,6 @@ PackedVaryingsType MotionVectorVS(inout VaryingsType varyingsType, AttributesMes
         bool hasDeformation = unity_MotionVectorsParams.x > 0.0; // Skin or morph target
 
         float3 effectivePositionOS = (hasDeformation ? inputPass.previousPositionOS : inputMesh.positionOS);
-#if defined(_ADD_PRECOMPUTED_VELOCITY)
-        effectivePositionOS -= inputPass.precomputedVelocity;
-#endif
 
     // Need to apply any vertex animation to the previous worldspace position, if we want it to show up in the motion vector buffer
 #if defined(HAVE_MESH_MODIFICATION)
@@ -127,10 +124,6 @@ PackedVaryingsType MotionVectorVS(inout VaryingsType varyingsType, AttributesMes
         float3 normalWS = TransformPreviousObjectToWorldNormal(inputMesh.normalOS);
 #else
         float3 normalWS = float3(0.0, 0.0, 0.0);
-#endif
-
-#if defined(HAVE_VERTEX_MODIFICATION)
-        ApplyVertexModification(inputMesh, normalWS, previousPositionRWS, _LastTimeParameters.xyz);
 #endif
 
 #ifdef _WRITE_TRANSPARENT_MOTION_VECTOR

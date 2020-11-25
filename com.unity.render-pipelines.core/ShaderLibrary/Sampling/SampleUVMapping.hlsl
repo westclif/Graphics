@@ -22,14 +22,6 @@ struct UVMapping
 
     float3 normalWS; // vertex normal
     float3 triplanarWeights;
-
-#ifdef SURFACE_GRADIENT
-    // tangent basis to use when mappingType is UV_MAPPING_UVSET
-    // these are vertex level in world space
-    float3 tangentWS;
-    float3 bitangentWS;
-    // TODO: store also object normal map for object triplanar
-#endif
 };
 
 // Multiple includes of the file to handle all variations of textures sampling for regular, lod and bias

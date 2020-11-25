@@ -669,7 +669,7 @@ namespace UnityEngine.Rendering.HighDefinition
             m_xySeq = new Vector2[7];
 
             m_PixelCoordToViewDirWS = new Matrix4x4[ShaderConfig.s_XrMaxViews];
-
+            DestroyVolumetricLightingBuffers();
             CreateVolumetricLightingBuffers();
         }
 
@@ -1115,7 +1115,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 }
 
 
-                VolumetricLightingPass(parameters, m_SharedRTManager.GetDepthTexture(), m_DensityBuffer, m_LightingBuffer, m_DilatedMaxZMask, historyRT, feedbackRT, m_DilatedMaxZMask, m_TileAndClusterData.bigTileLightList, cmd);
+             //   VolumetricLightingPass(parameters, m_SharedRTManager.GetDepthTexture(), m_DensityBuffer, m_LightingBuffer, m_DilatedMaxZMask, historyRT, feedbackRT, m_DilatedMaxZMask, m_TileAndClusterData.bigTileLightList, cmd);
 
                 if (parameters.enableReprojection)
                     hdCamera.volumetricHistoryIsValid = true; // For the next frame...

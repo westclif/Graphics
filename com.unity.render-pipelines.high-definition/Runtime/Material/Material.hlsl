@@ -34,9 +34,9 @@ float4 ApplyBlendMode(float3 diffuseLighting, float3 specularLighting, float opa
         opacity = 0;
     #ifndef _ALPHATEST_ON
     else
-        // We hardcode opacity to 1 to avoid issues in forward when alpha might be coming from the texture source, but we don't want to keep it in case alpha is preserved. 
+        // We hardcode opacity to 1 to avoid issues in forward when alpha might be coming from the texture source, but we don't want to keep it in case alpha is preserved.
         opacity = 1;
-    #endif    
+    #endif
     return float4(diffuseLighting + specularLighting, opacity);
 #else
 
@@ -49,11 +49,7 @@ float4 ApplyBlendMode(float3 diffuseLighting, float3 specularLighting, float opa
     // In the case of alpha blend mode the code should be float4(diffuseLighting + (specularLighting / max(opacity, 0.01)), opacity)
     // However this have precision issue when reaching 0, so we change the blend mode and apply src * src_a inside the shader instead
     if (_BlendMode == BLENDMODE_ALPHA || _BlendMode == BLENDMODE_ADDITIVE)
-        return float4(diffuseLighting * opacity + specularLighting * (
-#ifdef SUPPORT_BLENDMODE_PRESERVE_SPECULAR_LIGHTING
-        _EnableBlendModePreserveSpecularLighting ? 1.0f :
-#endif
-            opacity), opacity);
+        return float4(diffuseLighting * opacity + specularLighting * (opacity), opacity);
     else
         return float4(diffuseLighting + specularLighting, opacity);
 

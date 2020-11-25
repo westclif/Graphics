@@ -35,8 +35,8 @@ void GetSurfaceData(FragInputs input, float3 V, PositionInputs posInput, float a
     #endif
 
     // Inverse pre-expose using _EmissiveExposureWeight weight
-    float3 emissiveRcpExposure = surfaceData.emissive * GetInverseCurrentExposureMultiplier();
-    surfaceData.emissive = lerp(emissiveRcpExposure, surfaceData.emissive, _EmissiveExposureWeight);
+  //  float3 emissiveRcpExposure = surfaceData.emissive * GetInverseCurrentExposureMultiplier();
+   // surfaceData.emissive = lerp(emissiveRcpExposure, surfaceData.emissive, _EmissiveExposureWeight);
 #endif // _MATERIAL_AFFECTS_EMISSION
 
     // Following code match the code in DecalUtilities.hlsl used for cluster. It have the same kind of condition and similar code structure
@@ -91,7 +91,7 @@ void GetSurfaceData(FragInputs input, float3 V, PositionInputs posInput, float a
 
     #if (SHADERPASS == SHADERPASS_DBUFFER_PROJECTOR)
 	normalWS = mul((float3x3)normalToWorld, normalTS);
-    #elif (SHADERPASS == SHADERPASS_DBUFFER_MESH)	
+    #elif (SHADERPASS == SHADERPASS_DBUFFER_MESH)
     // We need to normalize as we use mikkt tangent space and this is expected (tangent space is not normalize)
     normalWS = normalize(TransformTangentToWorld(normalTS, input.tangentToWorld));
     #endif

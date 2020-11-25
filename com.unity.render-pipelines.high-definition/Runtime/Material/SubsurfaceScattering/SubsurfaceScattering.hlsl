@@ -12,37 +12,6 @@
 uint GetSubsurfaceScatteringTexturingMode(int diffusionProfile)
 {
     uint texturingMode = 0;
-
-#if defined(SHADERPASS) && (SHADERPASS == SHADERPASS_SUBSURFACE_SCATTERING)
-    // If the SSS pass is executed, we know we have SSS enabled.
-    bool enableSss = true;
-    // SSS in HDRP is a screen space effect thus, it is not available for the lighting-based ray tracing passes (RTR, RTGI and RR). Thus we need to disable
-    // the feature if we are in a ray tracing pass.
-#elif defined(SHADERPASS) && ((SHADERPASS == SHADERPASS_RAYTRACING_INDIRECT) || (SHADERPASS == SHADERPASS_RAYTRACING_FORWARD))
-    // If the SSS pass is executed, we know we have SSS enabled.
-    bool enableSss = false;
-#else
-    bool enableSss = _EnableSubsurfaceScattering != 0;
-#endif
-
-    if (enableSss)
-    {
-        bool performPostScatterTexturing = IsBitSet(_TexturingModeFlags, diffusionProfile);
-
-        if (performPostScatterTexturing)
-        {
-            // Post-scatter texturing mode: the albedo is only applied during the SSS pass.
-        #if defined(SHADERPASS) && (SHADERPASS != SHADERPASS_SUBSURFACE_SCATTERING)
-            texturingMode = 1;
-        #endif
-        }
-        else
-        {
-            // Pre- and post- scatter texturing mode.
-            texturingMode = 2;
-        }
-    }
-
     return texturingMode;
 }
 
@@ -51,13 +20,6 @@ uint GetSubsurfaceScatteringTexturingMode(int diffusionProfile)
 // Ref: Advanced Techniques for Realistic Real-Time Skin Rendering.
 float3 ApplySubsurfaceScatteringTexturingMode(uint texturingMode, float3 color)
 {
-    switch (texturingMode)
-    {
-        case 2:  color = sqrt(color); break;
-        case 1:  color = 1;           break;
-        default: color = color;       break;
-    }
-
     return color;
 }
 
