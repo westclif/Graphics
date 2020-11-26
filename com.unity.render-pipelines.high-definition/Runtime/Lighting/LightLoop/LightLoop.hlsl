@@ -13,167 +13,6 @@
 #define SCALARIZE_LIGHT_LOOP (defined(PLATFORM_SUPPORTS_WAVE_INTRINSICS) && !defined(LIGHTLOOP_DISABLE_TILE_AND_CLUSTER) && SHADERPASS == SHADERPASS_FORWARD)
 #endif
 
-
-//-----------------------------------------------------------------------------
-// LightLoop
-// ----------------------------------------------------------------------------
-
-void ApplyDebugToLighting(LightLoopContext context, inout BuiltinData builtinData, inout AggregateLighting aggregateLighting)
-{
-#ifdef DEBUG_DISPLAY
-    if (_DebugLightingMode >= DEBUGLIGHTINGMODE_DIFFUSE_LIGHTING && _DebugLightingMode <= DEBUGLIGHTINGMODE_EMISSIVE_LIGHTING)
-    {
-        if (_DebugLightingMode == DEBUGLIGHTINGMODE_SPECULAR_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_DIRECT_SPECULAR_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_INDIRECT_DIFFUSE_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_REFLECTION_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_REFRACTION_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_EMISSIVE_LIGHTING)
-        {
-            aggregateLighting.direct.diffuse = real3(0.0, 0.0, 0.0);
-        }
-
-        if (_DebugLightingMode == DEBUGLIGHTINGMODE_DIFFUSE_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_DIRECT_DIFFUSE_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_INDIRECT_DIFFUSE_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_REFLECTION_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_REFRACTION_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_EMISSIVE_LIGHTING)
-        {
-            aggregateLighting.direct.specular = real3(0.0, 0.0, 0.0);
-        }
-
-        if (_DebugLightingMode == DEBUGLIGHTINGMODE_DIFFUSE_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_DIRECT_DIFFUSE_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_DIRECT_SPECULAR_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_INDIRECT_DIFFUSE_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_REFRACTION_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_EMISSIVE_LIGHTING)
-        {
-            aggregateLighting.indirect.specularReflected = real3(0.0, 0.0, 0.0);
-        }
-
-        // Note: specular transmission is the refraction and as it reflect lighting behind the object it
-        // must be displayed for both diffuse and specular mode, except if we ask for direct lighting only
-        if (_DebugLightingMode != DEBUGLIGHTINGMODE_REFRACTION_LIGHTING)
-        {
-            aggregateLighting.indirect.specularTransmitted = real3(0.0, 0.0, 0.0);
-        }
-
-        if (_DebugLightingMode == DEBUGLIGHTINGMODE_SPECULAR_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_DIRECT_DIFFUSE_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_DIRECT_SPECULAR_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_REFLECTION_LIGHTING ||
-            _DebugLightingMode == DEBUGLIGHTINGMODE_REFRACTION_LIGHTING
-#if (SHADERPASS != SHADERPASS_DEFERRED_LIGHTING)
-            || _DebugLightingMode == DEBUGLIGHTINGMODE_EMISSIVE_LIGHTING // With deferred, Emissive is store in builtinData.bakeDiffuseLighting
-#endif
-            )
-        {
-            builtinData.bakeDiffuseLighting = real3(0.0, 0.0, 0.0);
-        }
-
-        if (_DebugLightingMode != DEBUGLIGHTINGMODE_EMISSIVE_LIGHTING)
-        {
-            builtinData.emissiveColor = real3(0.0, 0.0, 0.0);
-        }
-    }
-#endif
-}
-
-void ApplyDebug(LightLoopContext context, PositionInputs posInput, BSDFData bsdfData, inout LightLoopOutput lightLoopOutput)
-{
-#ifdef DEBUG_DISPLAY
-    if (_DebugLightingMode == DEBUGLIGHTINGMODE_PROBE_VOLUME)
-    {
-        // Debug info is written to diffuseColor inside of light loop.
-        lightLoopOutput.specularLighting = float3(0.0, 0.0, 0.0);
-    }
-    else if (_DebugLightingMode == DEBUGLIGHTINGMODE_LUX_METER)
-    {
-        lightLoopOutput.specularLighting = float3(0.0, 0.0, 0.0); // Disable specular lighting
-        // Take the luminance
-        lightLoopOutput.diffuseLighting = Luminance(lightLoopOutput.diffuseLighting).xxx;
-    }
-    else if (_DebugLightingMode == DEBUGLIGHTINGMODE_VISUALIZE_CASCADE)
-    {
-        lightLoopOutput.specularLighting = float3(0.0, 0.0, 0.0);
-
-        const float3 s_CascadeColors[] = {
-            float3(0.5, 0.5, 0.7),
-            float3(0.5, 0.7, 0.5),
-            float3(0.7, 0.7, 0.5),
-            float3(0.7, 0.5, 0.5),
-            float3(1.0, 1.0, 1.0)
-        };
-
-        lightLoopOutput.diffuseLighting = Luminance(lightLoopOutput.diffuseLighting);
-        if (_DirectionalShadowIndex >= 0)
-        {
-            real alpha;
-            int cascadeCount;
-
-            int shadowSplitIndex = EvalShadow_GetSplitIndex(context.shadowContext, _DirectionalShadowIndex, posInput.positionWS, alpha, cascadeCount);
-            if (shadowSplitIndex >= 0)
-            {
-                SHADOW_TYPE shadow = 1.0;
-                if (_DirectionalShadowIndex >= 0)
-                {
-                    DirectionalLightData light = _DirectionalLightDatas[_DirectionalShadowIndex];
-
-#if defined(SCREEN_SPACE_SHADOWS_ON) && !defined(_SURFACE_TYPE_TRANSPARENT)
-                    if ((light.screenSpaceShadowIndex & SCREEN_SPACE_SHADOW_INDEX_MASK) != INVALID_SCREEN_SPACE_SHADOW)
-                    {
-                        shadow = GetScreenSpaceColorShadow(posInput, light.screenSpaceShadowIndex).SHADOW_TYPE_SWIZZLE;
-                    }
-                    else
-#endif
-                    {
-                        float3 L = -light.forward;
-                        shadow = GetDirectionalShadowAttenuation(context.shadowContext,
-                                                             posInput.positionSS, posInput.positionWS, GetNormalForShadowBias(bsdfData),
-                                                             light.shadowIndex, L);
-                    }
-                }
-
-                float3 cascadeShadowColor = lerp(s_CascadeColors[shadowSplitIndex], s_CascadeColors[shadowSplitIndex + 1], alpha);
-                // We can't mix with the lighting as it can be HDR and it is hard to find a good lerp operation for this case that is still compliant with
-                // exposure. So disable exposure instead and replace color.
-                lightLoopOutput.diffuseLighting = cascadeShadowColor * Luminance(lightLoopOutput.diffuseLighting) * shadow;
-            }
-
-        }
-    }
-    else if (_DebugLightingMode == DEBUGLIGHTINGMODE_MATCAP_VIEW)
-    {
-        lightLoopOutput.specularLighting = float3(0.0, 0.0, 0.0);
-        float3 normalVS = mul((float3x3)UNITY_MATRIX_V, bsdfData.normalWS).xyz;
-
-        float3 V = GetWorldSpaceNormalizeViewDir(posInput.positionWS);
-        float3 R = reflect(V, bsdfData.normalWS);
-
-        float2 UV = saturate(normalVS.xy * 0.5f + 0.5f);
-
-        float4 defaultColor = GetDiffuseOrDefaultColor(bsdfData, 1.0);
-
-        if (defaultColor.a == 1.0)
-        {
-            UV = saturate(R.xy * 0.5f + 0.5f);
-        }
-
-        lightLoopOutput.diffuseLighting = SAMPLE_TEXTURE2D_LOD(_DebugMatCapTexture, s_linear_repeat_sampler, UV, 0).rgb * (_MatcapMixAlbedo > 0  ? defaultColor.rgb * _MatcapViewScale : 1.0f);
-
-    #ifdef OUTPUT_SPLIT_LIGHTING // Work as matcap view is only call in forward, OUTPUT_SPLIT_LIGHTING isn't define in deferred.compute
-        if (_EnableSubsurfaceScattering != 0 && ShouldOutputSplitLighting(bsdfData))
-        {
-            lightLoopOutput.specularLighting = lightLoopOutput.diffuseLighting;
-        }
-    #endif
-
-    }
-#endif
-}
-
 void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BSDFData bsdfData, BuiltinData builtinData, uint featureFlags,
                 out LightLoopOutput lightLoopOutput)
 {
@@ -349,58 +188,6 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
             AccumulateIndirectLighting(lighting, aggregateLighting);
         }
 
-        // Reflection probes are sorted by volume (in the increasing order).
-        if (featureFlags & LIGHTFEATUREFLAGS_ENV)
-        {
-            context.sampleReflection = SINGLE_PASS_CONTEXT_SAMPLE_REFLECTION_PROBES;
-
-        #if SCALARIZE_LIGHT_LOOP
-            if (fastPath)
-            {
-                envLightStart = envStartFirstLane;
-            }
-        #endif
-
-            // Scalarized loop, same rationale of the punctual light version
-            uint v_envLightListOffset = 0;
-            uint v_envLightIdx = envLightStart;
-            while (v_envLightListOffset < envLightCount)
-            {
-                v_envLightIdx = FetchIndex(envLightStart, v_envLightListOffset);
-#if SCALARIZE_LIGHT_LOOP
-                uint s_envLightIdx = ScalarizeElementIndex(v_envLightIdx, fastPath);
-#else
-                uint s_envLightIdx = v_envLightIdx;
-#endif
-                if (s_envLightIdx == -1)
-                    break;
-
-                EnvLightData s_envLightData = FetchEnvLight(s_envLightIdx);    // Scalar load.
-
-                // If current scalar and vector light index match, we process the light. The v_envLightListOffset for current thread is increased.
-                // Note that the following should really be ==, however, since helper lanes are not considered by WaveActiveMin, such helper lanes could
-                // end up with a unique v_envLightIdx value that is smaller than s_envLightIdx hence being stuck in a loop. All the active lanes will not have this problem.
-                if (s_envLightIdx >= v_envLightIdx)
-                {
-                    v_envLightListOffset++;
-                    if (reflectionHierarchyWeight < 1.0)
-                    {
-                        EVALUATE_BSDF_ENV(s_envLightData, REFLECTION, reflection);
-                    }
-                    // Refraction probe and reflection probe will process exactly the same weight. It will be good for performance to be able to share this computation
-                    // However it is hard to deal with the fact that reflectionHierarchyWeight and refractionHierarchyWeight have not the same values, they are independent
-                    // The refraction probe is rarely used and happen only with sphere shape and high IOR. So we accept the slow path that use more simple code and
-                    // doesn't affect the performance of the reflection which is more important.
-                    // We reuse LIGHTFEATUREFLAGS_SSREFRACTION flag as refraction is mainly base on the screen. Would be a waste to not use screen and only cubemap.
-                    if ((featureFlags & LIGHTFEATUREFLAGS_SSREFRACTION) && (refractionHierarchyWeight < 1.0))
-                    {
-                        EVALUATE_BSDF_ENV(s_envLightData, REFRACTION, refraction);
-                    }
-                }
-
-            }
-        }
-
         // Only apply the sky IBL if the sky texture is available
         if ((featureFlags & LIGHTFEATUREFLAGS_SKY) && _EnvLightSkyEnabled)
         {
@@ -437,60 +224,6 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
             }
         }
     }
-
-#if SHADEROPTIONS_AREA_LIGHTS
-    if (featureFlags & LIGHTFEATUREFLAGS_AREA)
-    {
-        uint lightCount, lightStart;
-
-    #ifndef LIGHTLOOP_DISABLE_TILE_AND_CLUSTER
-        GetCountAndStart(posInput, LIGHTCATEGORY_AREA, lightStart, lightCount);
-    #else
-        lightCount = _AreaLightCount;
-        lightStart = _PunctualLightCount;
-    #endif
-
-        // COMPILER BEHAVIOR WARNING!
-        // If rectangle lights are before line lights, the compiler will duplicate light matrices in VGPR because they are used differently between the two types of lights.
-        // By keeping line lights first we avoid this behavior and save substantial register pressure.
-        // TODO: This is based on the current Lit.shader and can be different for any other way of implementing area lights, how to be generic and ensure performance ?
-
-        if (lightCount > 0)
-        {
-            i = 0;
-
-            uint      last      = lightCount - 1;
-            LightData lightData = FetchLight(lightStart, i);
-
-            while (i <= last && lightData.lightType == GPULIGHTTYPE_TUBE)
-            {
-                lightData.lightType = GPULIGHTTYPE_TUBE; // Enforce constant propagation
-                lightData.cookieMode = COOKIEMODE_NONE;  // Enforce constant propagation
-
-                if (IsMatchingLightLayer(lightData.lightLayers, builtinData.renderingLayers))
-                {
-                    DirectLighting lighting = EvaluateBSDF_Area(context, V, posInput, preLightData, lightData, bsdfData, builtinData);
-                    AccumulateDirectLighting(lighting, aggregateLighting);
-                }
-
-                lightData = FetchLight(lightStart, min(++i, last));
-            }
-
-            while (i <= last) // GPULIGHTTYPE_RECTANGLE
-            {
-                lightData.lightType = GPULIGHTTYPE_RECTANGLE; // Enforce constant propagation
-
-                if (IsMatchingLightLayer(lightData.lightLayers, builtinData.renderingLayers))
-                {
-                    DirectLighting lighting = EvaluateBSDF_Area(context, V, posInput, preLightData, lightData, bsdfData, builtinData);
-                    AccumulateDirectLighting(lighting, aggregateLighting);
-                }
-
-                lightData = FetchLight(lightStart, min(++i, last));
-            }
-        }
-    }
-#endif
 
 #if SHADEROPTIONS_PROBE_VOLUMES_EVALUATION_MODE == PROBEVOLUMESEVALUATIONMODES_LIGHT_LOOP
     bool uninitialized = IsUninitializedGI(builtinData.bakeDiffuseLighting);
@@ -544,9 +277,6 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
             // This is apply only on bakeDiffuseLighting as ModifyBakedDiffuseLighting combine both bakeDiffuseLighting and backBakeDiffuseLighting
             builtinDataProbeVolumes.bakeDiffuseLighting *= GetAmbientOcclusionForMicroShadowing(bsdfData);
 #endif
-
-            ApplyDebugToBuiltinData(builtinDataProbeVolumes);
-
             // Note: builtinDataProbeVolumes.bakeDiffuseLighting and builtinDataProbeVolumes.backBakeDiffuseLighting were combine inside of ModifyBakedDiffuseLighting().
             builtinData.bakeDiffuseLighting += builtinDataProbeVolumes.bakeDiffuseLighting;
         }
@@ -580,8 +310,6 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
     }
 #endif
 
-    ApplyDebugToLighting(context, builtinData, aggregateLighting);
-
     // Note: We can't apply the IndirectDiffuseMultiplier here as with GBuffer, Emissive is part of the bakeDiffuseLighting.
     // so IndirectDiffuseMultiplier is apply in PostInitBuiltinData or related location (like for probe volume)
     aggregateLighting.indirect.specularReflected *= GetIndirectSpecularMultiplier(builtinData.renderingLayers);
@@ -589,6 +317,4 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
     // Also Apply indiret diffuse (GI)
     // PostEvaluateBSDF will perform any operation wanted by the material and sum everything into diffuseLighting and specularLighting
     PostEvaluateBSDF(   context, V, posInput, preLightData, bsdfData, builtinData, aggregateLighting, lightLoopOutput);
-
-    ApplyDebug(context, posInput, bsdfData, lightLoopOutput);
 }

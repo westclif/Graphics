@@ -182,39 +182,6 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
         LightData lightData = _LightDatasRT[i];
         #endif
 
-        while (i < last && lightData.lightType == GPULIGHTTYPE_TUBE)
-        {
-            lightData.lightType = GPULIGHTTYPE_TUBE; // Enforce constant propagation
-
-            if (IsMatchingLightLayer(lightData.lightLayers, builtinData.renderingLayers))
-            {
-                DirectLighting lighting = EvaluateBSDF_Area(context, V, posInput, preLightData, lightData, bsdfData, builtinData);
-                AccumulateDirectLighting(lighting, aggregateLighting);
-            }
-            i++;
-            #ifdef USE_LIGHT_CLUSTER
-            lightData = FetchClusterLightIndex(cellIndex, i);
-            #else
-            lightData = _LightDatasRT[i];
-            #endif
-        }
-
-        while (i < last ) // GPULIGHTTYPE_RECTANGLE
-        {
-            lightData.lightType = GPULIGHTTYPE_RECTANGLE; // Enforce constant propagation
-
-            if (IsMatchingLightLayer(lightData.lightLayers, builtinData.renderingLayers))
-            {
-                DirectLighting lighting = EvaluateBSDF_Area(context, V, posInput, preLightData, lightData, bsdfData, builtinData);
-                AccumulateDirectLighting(lighting, aggregateLighting);
-            }
-            i++;
-            #ifdef USE_LIGHT_CLUSTER
-            lightData = FetchClusterLightIndex(cellIndex, i);
-            #else
-            lightData = _LightDatasRT[i];
-            #endif
-        }
     }
 
     PostEvaluateBSDF(context, V, posInput, preLightData, bsdfData, builtinData, aggregateLighting, lightLoopOutput);
