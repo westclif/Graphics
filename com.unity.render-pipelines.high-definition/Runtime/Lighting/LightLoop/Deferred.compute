@@ -171,6 +171,7 @@ void SHADE_OPAQUE_ENTRY(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 grou
 
     // Alias
     float3 diffuseLighting = lightLoopOutput.diffuseLighting;
+    float3 specularLighting = lightLoopOutput.specularLighting;
 
-    specularLightingUAV[COORD_TEXTURE2D_X(pixelCoord)] = float4(diffuseLighting, 1.0);
+    specularLightingUAV[COORD_TEXTURE2D_X(pixelCoord)] = float4(diffuseLighting + specularLighting, 1.0);
 }

@@ -309,7 +309,7 @@ Material:
     - _SpecularAAThreshold: 0.2
     - _SpecularHighlights: 1
     - _SpecularOcclusionMode: 1
-    - _SpecularToonRamp: 0
+    - _SpecularToonRamp: 16
     - _SrcBlend: 1
     - _StencilRef: 0
     - _StencilRefDepth: 0

@@ -188,6 +188,10 @@ namespace UnityEngine.Rendering.HighDefinition
         /// <summary>Return the current use RenderPipelineSettings (i.e for the current platform)</summary>
         public RenderPipelineSettings currentPlatformRenderPipelineSettings => m_RenderPipelineSettings;
 
+        public void SetRampsArray(Texture2DArray array) {
+            m_RenderPipelineSettings.extraSettings.rampArray = array;
+        }
+
         [SerializeField]
         internal bool allowShaderVariantStripping = true;
         [SerializeField]

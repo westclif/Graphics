@@ -999,7 +999,7 @@ void PostEvaluateBSDF(  LightLoopContext lightLoopContext,
     lightLoopOutput.diffuseLighting = lerp(lightLoopOutput.diffuseLighting, lighting.indirect.specularTransmitted, bsdfData.transmittanceMask * _EnableSSRefraction);
 #endif
 
-    lightLoopOutput.specularLighting = 0;
+    lightLoopOutput.specularLighting =lighting.direct.specular;
 }
 
 #endif // #ifdef HAS_LIGHTLOOP

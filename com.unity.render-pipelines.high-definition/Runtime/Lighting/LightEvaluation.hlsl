@@ -239,23 +239,10 @@ SHADOW_TYPE EvaluateShadow_Directional( LightLoopContext lightLoopContext, Posit
         // mean if we expend the code we have (shadow * (1 - fade) + fade). Here to make transition with shadow mask
         // we will remove fade and add fade * shadowMask which mean we do a lerp with shadow mask
         shadow = shadow - fade + fade * shadowMask;
-
-        // See comment in EvaluateBSDF_Punctual
-        shadow = light.nonLightMappedOnly ? min(shadowMask, shadow) : shadow;
     #endif
 
         shadow = lerp(shadowMask.SHADOW_TYPE_REPLICATE, shadow, light.shadowDimmer);
     }
-
-    // Transparents have no contact shadow information
-#if !defined(_SURFACE_TYPE_TRANSPARENT) && !defined(LIGHT_EVALUATION_NO_CONTACT_SHADOWS)
-    shadow = min(shadow, NdotL > 0.0 ? GetContactShadow(lightLoopContext, light.contactShadowMask, light.isRayTracedContactShadow) : 1.0);
-#endif
-
-#ifdef DEBUG_DISPLAY
-    if (_DebugShadowMapMode == SHADOWMAPDEBUGMODE_SINGLE_SHADOW && light.shadowIndex == _DebugSingleShadowIndex)
-        g_DebugShadowAttenuation = shadow;
-#endif
 
     return shadow;
 #else // LIGHT_EVALUATION_NO_SHADOWS
@@ -421,10 +408,6 @@ SHADOW_TYPE EvaluateShadow_Punctual(LightLoopContext lightLoopContext, PositionI
         shadow = lerp(shadowMask, shadow, light.shadowDimmer);
     }
 
-    // Transparents have no contact shadow information
-#if !defined(_SURFACE_TYPE_TRANSPARENT) && !defined(LIGHT_EVALUATION_NO_CONTACT_SHADOWS)
-    shadow = min(shadow, NdotL > 0.0 ? GetContactShadow(lightLoopContext, light.contactShadowMask, light.isRayTracedContactShadow) : 1.0);
-#endif
 
 #ifdef DEBUG_DISPLAY
     if (_DebugShadowMapMode == SHADOWMAPDEBUGMODE_SINGLE_SHADOW && light.shadowIndex == _DebugSingleShadowIndex)

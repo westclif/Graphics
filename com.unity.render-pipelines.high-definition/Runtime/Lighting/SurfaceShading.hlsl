@@ -12,15 +12,25 @@ TEXTURE2D_ARRAY(_AO3400_RampArray);
 
 DirectLighting ShadeSurface_Infinitesimal(PreLightData preLightData, BSDFData bsdfData,
                                           float3 V, float3 L, float3 lightColor,
-                                          float diffuseDimmer, float specularDimmer)
+                                          float diffuseDimmer, float shadow)
 {
     DirectLighting lighting;
     ZERO_INITIALIZE(DirectLighting, lighting);
 //#if !defined(_SURFACE_TYPE_TRANSPARENT)
-    float xIndex= (saturate(dot(bsdfData.normalWS, L))  * 0.5 + 0.5);
+    float NdotL = saturate(dot(bsdfData.normalWS, L))  * 0.5 + 0.5;
+    float3 h = normalize (L + V);
+    float nh = max (0, dot (bsdfData.normalWS, h));
 
+    lightColor *= diffuseDimmer;
 
-    lighting.diffuse = lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_point_clamp_sampler, float2(xIndex,0),bsdfData.textureRampShading, 0.0) * diffuseDimmer;
+    lighting.diffuse = lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_point_clamp_sampler, float2(NdotL,0),bsdfData.textureRampShading, 0.0);
+
+  lighting.specular = lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_point_clamp_sampler, float2(pow (nh,  32),0),bsdfData.textureRampSpecular, 0.0);
+
+ //    float specIndex = saturate(dot(bsdfData.normalWS,normalize(V + L)));
+ //    lighting.diffuse += lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_point_clamp_sampler, float2(specIndex,0),bsdfData.textureRampSpecular, 0.0) *2;
+
+  //   lighting.diffuse += lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_point_clamp_sampler, float2(xIndex,0),bsdfData.textureRampRim, 0.0) *2;
 //#else
    // lighting.diffuse = lightColor * (saturate(dot(bsdfData.normalWS, L))  * 0.5 + 0.5);
 //#endif
@@ -50,7 +60,7 @@ DirectLighting ShadeSurface_Directional(LightLoopContext lightLoopContext,
     float3 L = -light.forward;
 
     // Is it worth evaluating the light?
-    if ((light.lightDimmer > 0) && IsNonZeroBSDF(V, L, preLightData, bsdfData))
+    if (light.lightDimmer > 0)
     {
         float4 lightColor = EvaluateLight_Directional(lightLoopContext, posInput, light);
         lightColor.rgb *= lightColor.a; // Composite
@@ -60,14 +70,8 @@ DirectLighting ShadeSurface_Directional(LightLoopContext lightLoopContext,
         shadow *= NdotL >= 0.0 ? ComputeMicroShadowing(GetAmbientOcclusionForMicroShadowing(bsdfData), NdotL, _MicroShadowOpacity) : 1.0;
         lightColor.rgb *= ComputeShadowColor(shadow, light.shadowTint, light.penumbraTint);
 
-        // Simulate a sphere/disk light with this hack.
-        // Note that it is not correct with our precomputation of PartLambdaV
-        // (means if we disable the optimization it will not have the
-        // same result) but we don't care as it is a hack anyway.
-        ClampRoughness(preLightData, bsdfData, light.minRoughness);
-
         lighting = ShadeSurface_Infinitesimal(preLightData, bsdfData, V, L, lightColor.rgb,
-                                              light.diffuseDimmer, light.specularDimmer);
+                                              light.diffuseDimmer, shadow);
     }
     return lighting;
 }
@@ -88,7 +92,7 @@ DirectLighting ShadeSurface_Punctual(LightLoopContext lightLoopContext,
     GetPunctualLightVectors(posInput.positionWS, light, L, distances);
 
     // Is it worth evaluating the light?
-    if ((light.lightDimmer > 0) && IsNonZeroBSDF(V, L, preLightData, bsdfData))
+    if (light.lightDimmer > 0)
     {
         float4 lightColor = EvaluateLight_Punctual(lightLoopContext, posInput, light, L, distances);
         lightColor.rgb *= lightColor.a; // Composite
@@ -97,21 +101,8 @@ DirectLighting ShadeSurface_Punctual(LightLoopContext lightLoopContext,
         SHADOW_TYPE shadow = EvaluateShadow_Punctual(lightLoopContext, posInput, light, builtinData, GetNormalForShadowBias(bsdfData), L, distances);
         lightColor.rgb *= ComputeShadowColor(shadow, light.shadowTint, light.penumbraTint);
 
-#ifdef DEBUG_DISPLAY
-        // The step with the attenuation is required to avoid seeing the screen tiles at the end of lights because the attenuation always falls to 0 before the tile ends.
-        // Note: g_DebugShadowAttenuation have been setup in EvaluateShadow_Punctual
-        if (_DebugShadowMapMode == SHADOWMAPDEBUGMODE_SINGLE_SHADOW && light.shadowIndex == _DebugSingleShadowIndex)
-            g_DebugShadowAttenuation *= step(FLT_EPS, lightColor.a);
-#endif
-
-        // Simulate a sphere/disk light with this hack.
-        // Note that it is not correct with our precomputation of PartLambdaV
-        // (means if we disable the optimization it will not have the
-        // same result) but we don't care as it is a hack anyway.
-        ClampRoughness(preLightData, bsdfData, light.minRoughness);
-
         lighting = ShadeSurface_Infinitesimal(preLightData, bsdfData, V, L, lightColor.rgb,
-                                              light.diffuseDimmer, light.specularDimmer);
+                                              light.diffuseDimmer, shadow);
     }
 
     return lighting;
