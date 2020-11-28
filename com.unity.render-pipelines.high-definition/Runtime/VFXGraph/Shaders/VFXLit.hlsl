@@ -82,6 +82,8 @@ BuiltinData VFXGetBuiltinData(const VFX_VARYING_PS_INPUTS i,const PositionInputs
 
     PostInitBuiltinData(GetWorldSpaceNormalizeViewDir(posInputs.positionWS),posInputs,surfaceData, builtinData);
 
+
+
     return builtinData;
 }
 
@@ -125,7 +127,7 @@ SurfaceData VFXGetSurfaceData(const VFX_VARYING_PS_INPUTS i, float3 normalWS,con
     #if HDRP_MATERIAL_TYPE_STANDARD
     surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_STANDARD;
     #ifdef VFX_VARYING_METALLIC
-    surfaceData.metallic = i.VFX_VARYING_METALLIC;
+//    surfaceData.metallic = i.VFX_VARYING_METALLIC;
     #endif
     #elif HDRP_MATERIAL_TYPE_SPECULAR
     surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_SPECULAR_COLOR;
@@ -143,9 +145,9 @@ SurfaceData VFXGetSurfaceData(const VFX_VARYING_PS_INPUTS i, float3 normalWS,con
 
     surfaceData.normalWS = normalWS;
     #ifdef VFX_VARYING_SMOOTHNESS
-    surfaceData.perceptualSmoothness = i.VFX_VARYING_SMOOTHNESS;
+   // surfaceData.perceptualSmoothness = i.VFX_VARYING_SMOOTHNESS;
     #endif
-    surfaceData.specularOcclusion = 1.0f;
+   // surfaceData.specularOcclusion = 1.0f;
     surfaceData.ambientOcclusion = 1.0f;
 
     #if HDRP_USE_MASK_MAP
@@ -154,6 +156,8 @@ SurfaceData VFXGetSurfaceData(const VFX_VARYING_PS_INPUTS i, float3 normalWS,con
     surfaceData.ambientOcclusion *= mask.g;
     surfaceData.perceptualSmoothness *= mask.a;
     #endif
+
+    surfaceData.textureRampShading = 3;
 
     return surfaceData;
 }

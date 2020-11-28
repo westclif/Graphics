@@ -142,27 +142,9 @@ Shader "Hidden/HDRP/Deferred"
 
                 // Alias
                 float3 diffuseLighting = lightLoopOutput.diffuseLighting;
-                float3 specularLighting = lightLoopOutput.specularLighting;
- 
-                diffuseLighting *= GetCurrentExposureMultiplier();
-                specularLighting *= GetCurrentExposureMultiplier();
 
                 Outputs outputs;
-
-            #ifdef OUTPUT_SPLIT_LIGHTING
-                if (_EnableSubsurfaceScattering != 0 && ShouldOutputSplitLighting(bsdfData))
-                {
-                    outputs.specularLighting = float4(specularLighting, 1.0);
-                    outputs.diffuseLighting  = TagLightingForSSS(diffuseLighting);
-                }
-                else
-                {
-                    outputs.specularLighting = float4(diffuseLighting + specularLighting, 1.0);
-                    outputs.diffuseLighting  = 0;
-                }
-            #else
-                outputs.combinedLighting = float4(diffuseLighting + specularLighting, 1.0);
-            #endif
+                outputs.combinedLighting = float4(diffuseLighting, 1.0);
 
                 return outputs;
             }

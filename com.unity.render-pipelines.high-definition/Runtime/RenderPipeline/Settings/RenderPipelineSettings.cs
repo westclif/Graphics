@@ -307,5 +307,16 @@ namespace UnityEngine.Rendering.HighDefinition
         [Obsolete("For data migration")]
         internal bool m_ObsoleteincreaseSssSampleCount;
     #pragma warning restore 618
+
+
+        /// <summary>
+        /// Light Settings.
+        /// </summary>
+        [Serializable]
+        public struct ExtraSettings {
+            public Texture2DArray rampArray;
+        }
+
+        public ExtraSettings extraSettings;
     }
 }

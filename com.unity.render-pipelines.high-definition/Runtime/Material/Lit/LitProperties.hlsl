@@ -21,7 +21,11 @@ SAMPLER(sampler_NormalMap);
 
 CBUFFER_START(UnityPerMaterial)
 
-// shared constant between lit and layered lit
+float _ShadingToonRamp;
+float _SpecularToonRamp;
+float _RimToonRamp;
+float _Translucency;
+
 float _AlphaCutoff;
 float4 _DoubleSidedConstants;
 float _DistortionScale;

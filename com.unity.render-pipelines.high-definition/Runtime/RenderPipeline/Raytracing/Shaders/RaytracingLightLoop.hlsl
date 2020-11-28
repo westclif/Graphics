@@ -131,7 +131,7 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
     }
 
     // Only apply the sky IBL if the sky texture is available
-    if (_EnvLightSkyEnabled)
+    if (false)
     {
         // The sky is a single cubemap texture separate from the reflection probe texture array (different resolution and compression)
         context.sampleReflection = SINGLE_PASS_CONTEXT_SAMPLE_SKY;

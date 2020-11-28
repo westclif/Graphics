@@ -77,9 +77,7 @@ bool IsBelow(MaterialData mtlData)
 
 float3x3 GetTangentFrame(MaterialData mtlData)
 {
-    return mtlData.bsdfData.anisotropy != 0.0 ?
-        float3x3(mtlData.bsdfData.tangentWS, mtlData.bsdfData.bitangentWS, mtlData.bsdfData.normalWS) :
-        GetLocalFrame(mtlData.bsdfData.normalWS);
+    return  GetLocalFrame(mtlData.bsdfData.normalWS);
 }
 
 #endif // UNITY_PATH_TRACING_MATERIAL_INCLUDED

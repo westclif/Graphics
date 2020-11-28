@@ -2,11 +2,6 @@
 // Defines
 //-------------------------------------------------------------------------------------
 
-// Use surface gradient normal mapping as it handle correctly triplanar normal mapping and multiple UVSet
-#ifndef SHADER_STAGE_RAY_TRACING
-#define SURFACE_GRADIENT
-#endif
-
 //-------------------------------------------------------------------------------------
 // Fill SurfaceData/Builtin data function
 //-------------------------------------------------------------------------------------
@@ -84,8 +79,7 @@ void GetLayerTexCoord(float2 texCoord0, float2 texCoord1, float2 texCoord2, floa
 // layerTexCoord must have been initialize to 0 outside of this function
 void GetLayerTexCoord(FragInputs input, inout LayerTexCoord layerTexCoord)
 {
-    GetLayerTexCoord(   input.texCoord0.xy, input.texCoord1.xy, input.texCoord2.xy, input.texCoord3.xy,
-                        input.positionRWS, input.tangentToWorld[2].xyz, layerTexCoord);
+    layerTexCoord.base.uv = input.texCoord0.xy * _BaseColorMap_ST.xy + _BaseColorMap_ST.zw;
 }
 
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/LitBuiltinData.hlsl"
@@ -127,7 +121,7 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
 
     surfaceData.geomNormalWS = input.tangentToWorld[2];
 
-    surfaceData.specularOcclusion = 1.0; // This need to be init here to quiet the compiler in case of decal, but can be override later.
+   // surfaceData.specularOcclusion = 1.0; // This need to be init here to quiet the compiler in case of decal, but can be override later.
 
 #if HAVE_DECALS
     if (_EnableDecals)

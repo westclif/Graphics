@@ -905,6 +905,9 @@ namespace UnityEngine.Rendering.HighDefinition
             for (int variant = 0; variant < LightDefinitions.s_NumFeatureVariants; variant++)
             {
                 s_shadeOpaqueIndirectFptlKernels[variant] = deferredComputeShader.FindKernel("Deferred_Indirect_Fptl_Variant" + variant);
+
+
+          //      deferredComputeShader.SetTexture(s_shadeOpaqueIndirectFptlKernels[variant], "_AO3400_RampArray", currentPlatformRenderPipelineSettings.extraSettings.rampArray);
             }
 
             m_TextureCaches.Initialize(asset, defaultResources, iBLFilterBSDFArray);
@@ -932,7 +935,7 @@ namespace UnityEngine.Rendering.HighDefinition
 
                         m_deferredLightingMaterial[index] = CoreUtils.CreateEngineMaterial(defaultResources.shaders.deferredPS);
                         m_deferredLightingMaterial[index].name = string.Format("{0}_{1}", defaultResources.shaders.deferredPS.name, index);
-                        CoreUtils.SetKeyword(m_deferredLightingMaterial[index], "OUTPUT_SPLIT_LIGHTING", outputSplitLighting == 1);
+                        CoreUtils.SetKeyword(m_deferredLightingMaterial[index], "OUTPUT_SPLIT_LIGHTING", false);
                         CoreUtils.SetKeyword(m_deferredLightingMaterial[index], "SHADOWS_SHADOWMASK", shadowMask == 1);
                         CoreUtils.SetKeyword(m_deferredLightingMaterial[index], "DEBUG_DISPLAY", debugDisplay == 1);
 
@@ -987,22 +990,9 @@ namespace UnityEngine.Rendering.HighDefinition
                 Shader.DisableKeyword(p);
             Shader.EnableKeyword(shadowKeywords[(int)shadowParams.shadowFilteringQuality]);
 
-            // Setup screen space shadow map usage.
-            // Screen space shadow map are currently only used with Raytracing and are a global keyword.
-            // either we support it and then use the variant that allow to enable/disable them, or we don't
-            // and use the variant that have them disabled.
-            // So this mean that even if we disable screen space shadow in frame settings, the version
-            // of the shader for the variant SCREEN_SPACE_SHADOWS is used, but a dynamic branch disable it.
-            if (shadowParams.supportScreenSpaceShadows)
-            {
-                Shader.EnableKeyword("SCREEN_SPACE_SHADOWS_ON");
-                Shader.DisableKeyword("SCREEN_SPACE_SHADOWS_OFF");
-            }
-            else
-            {
-                Shader.DisableKeyword("SCREEN_SPACE_SHADOWS_ON");
-                Shader.EnableKeyword("SCREEN_SPACE_SHADOWS_OFF");
-            }
+
+            Shader.DisableKeyword("SCREEN_SPACE_SHADOWS_ON");
+            Shader.EnableKeyword("SCREEN_SPACE_SHADOWS_OFF");
 
             InitShadowSystem(asset, defaultResources);
 
@@ -3755,6 +3745,8 @@ namespace UnityEngine.Rendering.HighDefinition
             public ComputeBuffer tileFeatureFlagsBuffer;
             public ComputeBuffer tileListBuffer;
             public ComputeBuffer dispatchIndirectBuffer;
+
+            public Texture2DArray rampTextures;
         }
 
         DeferredLightingResources PrepareDeferredLightingResources()
@@ -3836,6 +3828,8 @@ namespace UnityEngine.Rendering.HighDefinition
                     {
                         kernel = parameters.debugDisplaySettings.IsDebugDisplayEnabled() ? s_shadeOpaqueDirectFptlDebugDisplayKernel : s_shadeOpaqueDirectFptlKernel;
                     }
+
+                 //   cmd.SetComputeTextureParam(parameters.deferredComputeShader, kernel, "_AO3400_RampArray", resources.rampTextures);
 
                     cmd.SetComputeTextureParam(parameters.deferredComputeShader, kernel, HDShaderIDs._CameraDepthTexture, resources.depthTexture);
 

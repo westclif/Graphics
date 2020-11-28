@@ -383,6 +383,10 @@ namespace UnityEngine.Rendering.HighDefinition
                     // This can wait that we remove the old code path.
                     BindGlobalLightingBuffers(data.lightingBuffers, context.cmd);
 
+
+                    context.cmd.SetGlobalTexture("_AO3400_RampArray", currentPlatformRenderPipelineSettings.extraSettings.rampArray);
+                    resources.rampTextures = currentPlatformRenderPipelineSettings.extraSettings.rampArray;
+
                     if (data.parameters.enableTile)
                     {
                         bool useCompute = data.parameters.useComputeLightingEvaluation && !k_PreferFragment;

@@ -41,7 +41,7 @@ float ADD_IDX(GetSurfaceData)(FragInputs input, LayerTexCoord layerTexCoord, out
     surfaceData.baseColor = color.rgb;
     float alpha = color.a;
 
-    surfaceData.specularOcclusion = 1.0; // Will be setup outside of this function
+//    surfaceData.specularOcclusion = 1.0; // Will be setup outside of this function
 
     surfaceData.normalWS = float3(0.0, 0.0, 0.0); // Need to init this to keep quiet the compiler, but this is overriden later (0, 0, 0) so if we forget to override the compiler may comply.
     surfaceData.geomNormalWS = float3(0.0, 0.0, 0.0); // Not used, just to keep compiler quiet.
@@ -49,15 +49,19 @@ float ADD_IDX(GetSurfaceData)(FragInputs input, LayerTexCoord layerTexCoord, out
     normalTS = ADD_IDX(GetNormalTS)(input, layerTexCoord, detailNormalTS, detailMask);
     bentNormalTS = ADD_IDX(GetBentNormalTS)(input, layerTexCoord, normalTS, detailNormalTS, detailMask);
 
-    surfaceData.perceptualSmoothness = 0;
+   // surfaceData.perceptualSmoothness = 0;
 
-    surfaceData.metallic = 0;
+   // surfaceData.metallic = 0;
     surfaceData.ambientOcclusion = 1.0;
 
-    surfaceData.diffusionProfileHash = 0;
-    surfaceData.subsurfaceMask = 0;
+    surfaceData.textureRampShading = _ShadingToonRamp;
+    surfaceData.textureRampSpecular = _SpecularToonRamp;
+    surfaceData.textureRampRim = _RimToonRamp;
 
-    surfaceData.thickness = 0;
+    //surfaceData.diffusionProfileHash = 0;
+   // surfaceData.subsurfaceMask = 0;
+
+    //surfaceData.thickness = 0;
 
     // These static material feature allow compile time optimization
     surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_STANDARD;
@@ -78,8 +82,8 @@ float ADD_IDX(GetSurfaceData)(FragInputs input, LayerTexCoord layerTexCoord, out
     surfaceData.tangentWS = input.tangentToWorld[0].xyz; // The tangent is not normalize in tangentToWorld for mikkt. TODO: Check if it expected that we normalize with Morten. Tag: SURFACE_GRADIENT
 #endif
 
-    surfaceData.anisotropy = 1.0;
-    surfaceData.specularColor = 0;
+   // surfaceData.anisotropy = 1.0;
+   // surfaceData.specularColor = 0;
 
 #if HAS_REFRACTION
     if (_EnableSSRefraction)
@@ -105,11 +109,6 @@ float ADD_IDX(GetSurfaceData)(FragInputs input, LayerTexCoord layerTexCoord, out
     surfaceData.atDistance = 1.0;
     surfaceData.transmittanceMask = 0.0;
 #endif
-
-    surfaceData.coatMask = 0.0;
-    surfaceData.iridescenceThickness = 0.0;
-    surfaceData.iridescenceMask = 0.0;
-
 
     return alpha;
 }

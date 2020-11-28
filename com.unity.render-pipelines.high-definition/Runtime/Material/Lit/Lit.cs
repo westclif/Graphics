@@ -36,61 +36,29 @@ namespace UnityEngine.Rendering.HighDefinition
             [MaterialSharedPropertyMapping(MaterialSharedProperty.Albedo)]
             [SurfaceDataAttributes("Base Color", false, true, FieldPrecision.Real)]
             public Vector3 baseColor;
-            [SurfaceDataAttributes("Specular Occlusion", precision = FieldPrecision.Real)]
-            public float specularOcclusion;
 
             [MaterialSharedPropertyMapping(MaterialSharedProperty.Normal)]
             [SurfaceDataAttributes(new string[] {"Normal", "Normal View Space"}, true, checkIsNormalized = true)]
             public Vector3 normalWS;
 
-            [MaterialSharedPropertyMapping(MaterialSharedProperty.Smoothness)]
-            [SurfaceDataAttributes("Smoothness", precision = FieldPrecision.Real)]
-            public float perceptualSmoothness;
-
             [MaterialSharedPropertyMapping(MaterialSharedProperty.AmbientOcclusion)]
             [SurfaceDataAttributes("Ambient Occlusion", precision = FieldPrecision.Real)]
             public float ambientOcclusion;
 
-            [MaterialSharedPropertyMapping(MaterialSharedProperty.Metal)]
-            [SurfaceDataAttributes("Metallic", precision = FieldPrecision.Real)]
-            public float metallic;
+            [SurfaceDataAttributes("textureRampShading")]
+            public uint textureRampShading;
 
-            [SurfaceDataAttributes("Coat mask", precision = FieldPrecision.Real)]
-            public float coatMask;
-
-            // MaterialFeature dependent attribute
-
-            // Specular Color
-            [MaterialSharedPropertyMapping(MaterialSharedProperty.Specular)]
-            [SurfaceDataAttributes("Specular Color", false, true, FieldPrecision.Real)]
-            public Vector3 specularColor;
-
-            // SSS
-            [SurfaceDataAttributes("Diffusion Profile Hash")]
-            public uint diffusionProfileHash;
-            [SurfaceDataAttributes("Subsurface Mask", precision = FieldPrecision.Real)]
-            public float subsurfaceMask;
-
-            // Transmission
-            // + Diffusion Profile
-            [SurfaceDataAttributes("Thickness", precision = FieldPrecision.Real)]
-            public float thickness;
-
-            // Anisotropic
-            [SurfaceDataAttributes("Tangent", true)]
-            public Vector3 tangentWS;
-            [SurfaceDataAttributes("Anisotropy", precision = FieldPrecision.Real)]
-            public float anisotropy; // anisotropic ratio(0->no isotropic; 1->full anisotropy in tangent direction, -1->full anisotropy in bitangent direction)
-
-            // Iridescence
-            [SurfaceDataAttributes("Iridescence Layer Thickness", precision = FieldPrecision.Real)]
-            public float iridescenceThickness;
-            [SurfaceDataAttributes("Iridescence Mask", precision = FieldPrecision.Real)]
-            public float iridescenceMask;
+            [SurfaceDataAttributes("textureRampSpecular")]
+            public uint textureRampSpecular;
+            [SurfaceDataAttributes("textureRampRim")]
+            public uint textureRampRim;
 
             // Forward property only
             [SurfaceDataAttributes(new string[] { "Geometric Normal", "Geometric Normal View Space" }, true, precision = FieldPrecision.Real, checkIsNormalized = true)]
             public Vector3 geomNormalWS;
+
+            [SurfaceDataAttributes("Tangent", true)]
+            public Vector3 tangentWS;
 
             // Transparency
             // Reuse thickness from SSS
@@ -121,33 +89,14 @@ namespace UnityEngine.Rendering.HighDefinition
 
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float ambientOcclusion; // Caution: This is accessible only if light layer is enabled, otherwise it is 1
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float specularOcclusion;
 
             [SurfaceDataAttributes(new string[] { "Normal WS", "Normal View Space" }, true, checkIsNormalized: true)]
             public Vector3 normalWS;
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float perceptualRoughness;
-
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float coatMask;
-
-            // MaterialFeature dependent attribute
-
-            // SpecularColor fold into fresnel0
 
             // SSS
-            public uint diffusionProfileIndex;
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float subsurfaceMask;
-
-            // Transmission
-            // + Diffusion Profile
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float thickness;
-            public bool useThickObjectMode; // Read from the diffusion profile
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public Vector3 transmittance;   // Precomputation of transmittance
+            public uint textureRampShading;
+            public uint textureRampSpecular;
+            public uint textureRampRim;
 
             // Anisotropic
             [SurfaceDataAttributes("", true)]
@@ -158,18 +107,6 @@ namespace UnityEngine.Rendering.HighDefinition
             public float roughnessT;
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float roughnessB;
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float anisotropy;
-
-            // Iridescence
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float iridescenceThickness;
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float iridescenceMask;
-
-            // ClearCoat
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float coatRoughness; // Automatically fill
 
             // Forward property only
             [SurfaceDataAttributes(new string[] { "Geometric Normal", "Geometric Normal View Space" }, true, precision = FieldPrecision.Real, checkIsNormalized = true)]
@@ -178,11 +115,6 @@ namespace UnityEngine.Rendering.HighDefinition
             // Transparency
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float ior;
-            // Reuse thickness from SSS
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public Vector3 absorptionCoefficient;
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float transmittanceMask;
         };
 
         //-----------------------------------------------------------------------------

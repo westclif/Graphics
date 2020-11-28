@@ -5,28 +5,33 @@
 //-----------------------------------------------------------------------------
 // Directional and punctual lights (infinitesimal solid angle)
 //-----------------------------------------------------------------------------
+
+//_AO3400_RampArray
+
+TEXTURE2D_ARRAY(_AO3400_RampArray);
+
 DirectLighting ShadeSurface_Infinitesimal(PreLightData preLightData, BSDFData bsdfData,
                                           float3 V, float3 L, float3 lightColor,
                                           float diffuseDimmer, float specularDimmer)
 {
     DirectLighting lighting;
     ZERO_INITIALIZE(DirectLighting, lighting);
+//#if !defined(_SURFACE_TYPE_TRANSPARENT)
+    float xIndex= (saturate(dot(bsdfData.normalWS, L))  * 0.5 + 0.5);
 
-    if (Max3(lightColor.r, lightColor.g, lightColor.b) > 0)
-    {
-        CBSDF cbsdf = EvaluateBSDF(V, L, preLightData, bsdfData);
-        lighting.diffuse  = cbsdf.diffR * lightColor * diffuseDimmer;
-        lighting.specular = 0;
-    }
 
-#ifdef DEBUG_DISPLAY
-    if (_DebugLightingMode == DEBUGLIGHTINGMODE_LUX_METER)
-    {
-        // Only lighting, no BSDF.
-        lighting.diffuse = lightColor * saturate(dot(bsdfData.normalWS, L));
-    }
-#endif
+    lighting.diffuse = lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_point_clamp_sampler, float2(xIndex,0),bsdfData.textureRampShading, 0.0) * diffuseDimmer;
+//#else
+   // lighting.diffuse = lightColor * (saturate(dot(bsdfData.normalWS, L))  * 0.5 + 0.5);
+//#endif
+   // if (Max3(lightColor.r, lightColor.g, lightColor.b) > 0)
+   // {
+   //     CBSDF cbsdf = EvaluateBSDF(V, L, preLightData, bsdfData);
+   //     lighting.diffuse  = cbsdf.diffR * lightColor * diffuseDimmer;
+   //     lighting.specular = 0;
+   // }
 
+//lighting.diffuse = lightColor * saturate(dot(bsdfData.normalWS, L));
     return lighting;
 }
 

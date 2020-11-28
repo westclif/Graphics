@@ -12,18 +12,10 @@ void ApplyDecalToSurfaceData(DecalSurfaceData decalSurfaceData, float3 vtxNormal
     }
 
 #ifdef DECALS_4RT // only smoothness in 3RT mode
-#ifdef _MATERIAL_FEATURE_SPECULAR_COLOR
-    if (decalSurfaceData.MAOSBlend.x < 1.0)
-    {
-        float3 decalSpecularColor = ComputeFresnel0((decalSurfaceData.baseColor.w < 1.0) ? decalSurfaceData.baseColor.xyz : float3(1.0, 1.0, 1.0), decalSurfaceData.mask.x, DEFAULT_SPECULAR_VALUE);
-        surfaceData.specularColor = surfaceData.specularColor * decalSurfaceData.MAOSBlend.x + decalSpecularColor * (1.0f - decalSurfaceData.MAOSBlend.x);
-    }
-#else
     surfaceData.metallic = surfaceData.metallic * decalSurfaceData.MAOSBlend.x + decalSurfaceData.mask.x;
-#endif
 
     surfaceData.ambientOcclusion = surfaceData.ambientOcclusion * decalSurfaceData.MAOSBlend.y + decalSurfaceData.mask.y;
 #endif
 
-    surfaceData.perceptualSmoothness = surfaceData.perceptualSmoothness * decalSurfaceData.mask.w + decalSurfaceData.mask.z;
+//    surfaceData.perceptualSmoothness = surfaceData.perceptualSmoothness * decalSurfaceData.mask.w + decalSurfaceData.mask.z;
 }

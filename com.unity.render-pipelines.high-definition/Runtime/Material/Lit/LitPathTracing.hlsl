@@ -17,15 +17,6 @@ void ProcessBSDFData(PathIntersection pathIntersection, BuiltinData builtinData,
 
     float NdotV = abs(dot(bsdfData.normalWS, WorldRayDirection()));
 
-    // Modify fresnel0 value to take iridescence into account (code adapted from Lit.hlsl to produce identical results)
-    if (bsdfData.iridescenceMask > 0.0)
-    {
-        float topIOR = lerp(1.0, CLEAR_COAT_IOR, bsdfData.coatMask);
-        float viewAngle = sqrt(1.0 + (Sq(NdotV) - 1.0) / Sq(topIOR));
-
-        bsdfData.fresnel0 = lerp(bsdfData.fresnel0, EvalIridescence(topIOR, viewAngle, bsdfData.iridescenceThickness, bsdfData.fresnel0), bsdfData.iridescenceMask);
-    }
-
     // We store an energy compensation coefficient for GGX into the specular occlusion (code adapted from Lit.hlsl to produce identical results)
 #ifdef LIT_USE_GGX_ENERGY_COMPENSATION
     float roughness = 0.5 * (bsdfData.roughnessT + bsdfData.roughnessB);
