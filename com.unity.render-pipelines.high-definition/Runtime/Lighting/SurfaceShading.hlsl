@@ -20,10 +20,31 @@ DirectLighting ShadeSurface_Infinitesimal(PreLightData preLightData, BSDFData bs
     float NdotL = saturate(dot(bsdfData.normalWS, L))  * 0.5 + 0.5;
     float3 h = normalize (L + V);
     float nh = max (0, dot (bsdfData.normalWS, h));
+    float NdotV = dot(bsdfData.normalWS, V);
 
     lightColor *= diffuseDimmer;
     lighting.diffuse = lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(NdotL,0),bsdfData.textureRampShading, 0.0);
     lighting.specular = lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(pow (nh,  32),0),bsdfData.textureRampSpecular, 0.0);
+
+
+    //rimlight
+    lighting.diffuse += lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(1.0 - NdotV,0),bsdfData.textureRampRim, 0.0)*2;
+
+
+    //translucency https://colinbarrebrisebois.com/2012/04/09/approximating-translucency-revisited-with-simplified-spherical-gaussian/
+    float fLTDistortion = 0.1; // fLTDistortion = Translucency Distortion Scale Factor
+    float fLTPower = (1.35-bsdfData.translucency) * 7.0; // fLTPower = Power Factor
+    float fLTScale =  3.0*bsdfData.translucency; // fLTScale = Scale Factor
+
+    half3 vLTLight = L + bsdfData.normalWS * fLTDistortion;
+ //   half fLTDot = exp2(saturate(dot( V, -vLTLight)) * fLTPower - fLTPower) * fLTScale;
+    half fLTDot = pow(saturate(dot(V, -vLTLight)),fLTPower) * fLTScale;
+    lighting.diffuse += lightColor * fLTDot;
+
+  //  	half3 vLTLight = -light.dir + gbuffer2.rgb; //* gbuffer1.g; // gbuffer1.g = distortion
+	//half fLTDot = pow(saturate(dot(eyeVec, -vLTLight)),5* (1.01-gbuffer1.b)); // gbuffer1.b = power
+	//half3 fLT = atten * fLTDot; // gbuffer0.a = thickness, ignoring ambient term
+	//res += half4(gbuffer0 * fLT*7* gbuffer1.b* light.color * (wetness + 1), 0);
 
     return lighting;
 }

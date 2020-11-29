@@ -352,20 +352,10 @@ void EncodeIntoGBuffer( SurfaceData surfaceData
 {
     // RT0 - 8:8:8:8 sRGB
     // Warning: the contents are later overwritten for Standard and SSS!
-    outGBuffer0 = float4(surfaceData.baseColor, 1);
+    outGBuffer0 = float4(surfaceData.baseColor, surfaceData.translucency);
 
     // This encode normalWS and PerceptualSmoothness into GBuffer1
     EncodeIntoNormalBuffer(ConvertSurfaceDataToNormalData(surfaceData), outGBuffer1);
-
-    // RT2 - 8:8:8:8
-    // In the case of standard or specular color we always convert to specular color parametrization before encoding,
-    // so decoding is more efficient (it allow better optimization for the compiler and save VGPR)
-    // This mean that on the decode side, MATERIALFEATUREFLAGS_LIT_SPECULAR_COLOR doesn't exist anymore
-    uint materialFeatureId = GBUFFER_LIT_STANDARD;
-
-    float3 diffuseColor = surfaceData.baseColor;
-    outGBuffer0.rgb = diffuseColor;               // sRGB RT
-    outGBuffer2.rgb = 0; // TODO: optimize     // outGBuffer2 is not sRGB, so use a fast encode/decode sRGB to keep precision
 
     // Ensure that surfaceData.coatMask is 0 if the feature is not enabled
     // Note: no need to store MATERIALFEATUREFLAGS_LIT_STANDARD, always present
@@ -500,6 +490,7 @@ uint DecodeFromGBuffer(uint2 positionSS, uint tileFeatureFlags, out BSDFData bsd
     bsdfData.textureRampSpecular =UnpackByte(inGBuffer2.g);
     bsdfData.textureRampRim =UnpackByte(inGBuffer2.b);
     bsdfData.reflection  = inGBuffer2.a;
+    bsdfData.translucency = inGBuffer0.a;
 
     // Decompress feature-agnostic data from the G-Buffer.
     float3 baseColor = inGBuffer0.rgb;
@@ -512,7 +503,6 @@ uint DecodeFromGBuffer(uint2 positionSS, uint tileFeatureFlags, out BSDFData bsd
 
 
     bsdfData.diffuseColor = baseColor;
- //   bsdfData.specularOcclusion = inGBuffer0.a;
 
     return MATERIALFEATUREFLAGS_LIT_STANDARD;
 }
@@ -738,21 +728,10 @@ IndirectLighting EvaluateBSDF_ScreenSpaceReflection(PositionInputs posInput,
 {
     IndirectLighting lighting;
     ZERO_INITIALIZE(IndirectLighting, lighting);
-
-    // TODO: this texture is sparse (mostly black). Can we avoid reading every texel? How about using Hi-S?
     float4 ssrLighting = LOAD_TEXTURE2D_X(_SsrLightingTexture, posInput.positionSS);
-   // InversePreExposeSsrLighting(ssrLighting);
-
-    // Apply the weight on the ssr contribution (if required)
-   // ApplyScreenSpaceReflectionWeight(ssrLighting);
-
-    // TODO: we should multiply all indirect lighting by the FGD value only ONCE.
-    // In case this material has a clear coat, we shou not be using the specularFGD. The condition for it is a combination
-    // of a materia feature and the coat mask.
     float clampedNdotV = ClampNdotV(preLightData.NdotV);
-    lighting.specularReflected = ssrLighting.rgb; //*  preLightData.specularFGD;
+    lighting.specularReflected = ssrLighting.rgb;
     reflectionHierarchyWeight  = ssrLighting.a;
-
     return lighting;
 }
 
@@ -836,7 +815,6 @@ IndirectLighting EvaluateBSDF_ScreenspaceRefraction(LightLoopContext lightLoopCo
 //-----------------------------------------------------------------------------
 // EvaluateBSDF_Env
 // ----------------------------------------------------------------------------
-// _preIntegratedFGD and _CubemapLD are unique for each BRDF
 IndirectLighting EvaluateBSDF_Env(  LightLoopContext lightLoopContext,
                                     float3 V, PositionInputs posInput,
                                     PreLightData preLightData, EnvLightData lightData, BSDFData bsdfData,
@@ -902,8 +880,11 @@ IndirectLighting EvaluateBSDF_Env(  LightLoopContext lightLoopContext,
 #endif
 
 
+    envLighting *= max(bsdfData.normalWS.y,0);
+
     UpdateLightingHierarchyWeights(hierarchyWeight, weight);
     envLighting *= weight * lightData.multiplier;
+
 
     if (GPUImageBasedLightingType == GPUIMAGEBASEDLIGHTINGTYPE_REFLECTION)
         lighting.specularReflected = envLighting;

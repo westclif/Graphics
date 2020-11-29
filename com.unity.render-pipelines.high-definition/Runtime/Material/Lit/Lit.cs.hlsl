@@ -26,13 +26,14 @@
 #define DEBUGVIEW_LIT_SURFACEDATA_TEXTURE_RAMP_SPECULAR (1005)
 #define DEBUGVIEW_LIT_SURFACEDATA_TEXTURE_RAMP_RIM (1006)
 #define DEBUGVIEW_LIT_SURFACEDATA_REFLECTION (1007)
-#define DEBUGVIEW_LIT_SURFACEDATA_GEOMETRIC_NORMAL (1008)
-#define DEBUGVIEW_LIT_SURFACEDATA_GEOMETRIC_NORMAL_VIEW_SPACE (1009)
-#define DEBUGVIEW_LIT_SURFACEDATA_TANGENT (1010)
-#define DEBUGVIEW_LIT_SURFACEDATA_INDEX_OF_REFRACTION (1011)
-#define DEBUGVIEW_LIT_SURFACEDATA_TRANSMITTANCE_COLOR (1012)
-#define DEBUGVIEW_LIT_SURFACEDATA_TRANSMITTANCE_ABSORPTION_DISTANCE (1013)
-#define DEBUGVIEW_LIT_SURFACEDATA_TRANSMITTANCE_MASK (1014)
+#define DEBUGVIEW_LIT_SURFACEDATA_TRANSLUCENCY (1008)
+#define DEBUGVIEW_LIT_SURFACEDATA_GEOMETRIC_NORMAL (1009)
+#define DEBUGVIEW_LIT_SURFACEDATA_GEOMETRIC_NORMAL_VIEW_SPACE (1010)
+#define DEBUGVIEW_LIT_SURFACEDATA_TANGENT (1011)
+#define DEBUGVIEW_LIT_SURFACEDATA_INDEX_OF_REFRACTION (1012)
+#define DEBUGVIEW_LIT_SURFACEDATA_TRANSMITTANCE_COLOR (1013)
+#define DEBUGVIEW_LIT_SURFACEDATA_TRANSMITTANCE_ABSORPTION_DISTANCE (1014)
+#define DEBUGVIEW_LIT_SURFACEDATA_TRANSMITTANCE_MASK (1015)
 
 //
 // UnityEngine.Rendering.HighDefinition.Lit+BSDFData:  static fields
@@ -45,10 +46,11 @@
 #define DEBUGVIEW_LIT_BSDFDATA_TEXTURE_RAMP_SPECULAR (1055)
 #define DEBUGVIEW_LIT_BSDFDATA_TEXTURE_RAMP_RIM (1056)
 #define DEBUGVIEW_LIT_BSDFDATA_REFLECTION (1057)
-#define DEBUGVIEW_LIT_BSDFDATA_TANGENT_WS (1058)
-#define DEBUGVIEW_LIT_BSDFDATA_GEOMETRIC_NORMAL (1059)
-#define DEBUGVIEW_LIT_BSDFDATA_GEOMETRIC_NORMAL_VIEW_SPACE (1060)
-#define DEBUGVIEW_LIT_BSDFDATA_IOR (1061)
+#define DEBUGVIEW_LIT_BSDFDATA_TRANSLUCENCY (1058)
+#define DEBUGVIEW_LIT_BSDFDATA_TANGENT_WS (1059)
+#define DEBUGVIEW_LIT_BSDFDATA_GEOMETRIC_NORMAL (1060)
+#define DEBUGVIEW_LIT_BSDFDATA_GEOMETRIC_NORMAL_VIEW_SPACE (1061)
+#define DEBUGVIEW_LIT_BSDFDATA_IOR (1062)
 
 // Generated from UnityEngine.Rendering.HighDefinition.Lit+SurfaceData
 // PackingRules = Exact
@@ -61,6 +63,7 @@ struct SurfaceData
     uint textureRampSpecular;
     uint textureRampRim;
     real reflection;
+    real translucency;
     real3 geomNormalWS;
     float3 tangentWS;
     real ior;
@@ -80,6 +83,7 @@ struct BSDFData
     uint textureRampSpecular;
     uint textureRampRim;
     real reflection;
+    real translucency;
     float3 tangentWS;
     real3 geomNormalWS;
     real ior;
@@ -116,6 +120,9 @@ void GetGeneratedSurfaceDataDebug(uint paramId, SurfaceData surfacedata, inout f
             break;
         case DEBUGVIEW_LIT_SURFACEDATA_REFLECTION:
             result = surfacedata.reflection.xxx;
+            break;
+        case DEBUGVIEW_LIT_SURFACEDATA_TRANSLUCENCY:
+            result = surfacedata.translucency.xxx;
             break;
         case DEBUGVIEW_LIT_SURFACEDATA_GEOMETRIC_NORMAL:
             result = IsNormalized(surfacedata.geomNormalWS)? surfacedata.geomNormalWS * 0.5 + 0.5 : float3(1.0, 0.0, 0.0);
@@ -172,6 +179,9 @@ void GetGeneratedBSDFDataDebug(uint paramId, BSDFData bsdfdata, inout float3 res
             break;
         case DEBUGVIEW_LIT_BSDFDATA_REFLECTION:
             result = bsdfdata.reflection.xxx;
+            break;
+        case DEBUGVIEW_LIT_BSDFDATA_TRANSLUCENCY:
+            result = bsdfdata.translucency.xxx;
             break;
         case DEBUGVIEW_LIT_BSDFDATA_TANGENT_WS:
             result = bsdfdata.tangentWS * 0.5 + 0.5;

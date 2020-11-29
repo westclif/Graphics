@@ -50,6 +50,8 @@ namespace UnityEngine.Rendering.HighDefinition
             public uint textureRampRim;
             [SurfaceDataAttributes("Reflection", precision = FieldPrecision.Real)]
             public float reflection;
+            [SurfaceDataAttributes("Translucency", precision = FieldPrecision.Real)]
+            public float translucency;
 
             // Forward property only
             [SurfaceDataAttributes(new string[] { "Geometric Normal", "Geometric Normal View Space" }, true, precision = FieldPrecision.Real, checkIsNormalized = true)]
@@ -93,6 +95,8 @@ namespace UnityEngine.Rendering.HighDefinition
 
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float reflection;
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public float translucency;
 
             // Anisotropic
             [SurfaceDataAttributes("", true)]
