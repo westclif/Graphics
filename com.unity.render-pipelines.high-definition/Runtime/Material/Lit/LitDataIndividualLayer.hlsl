@@ -57,14 +57,7 @@ float ADD_IDX(GetSurfaceData)(FragInputs input, LayerTexCoord layerTexCoord, out
     surfaceData.textureRampShading = _ShadingToonRamp;
     surfaceData.textureRampSpecular = _SpecularToonRamp;
     surfaceData.textureRampRim = _RimToonRamp;
-
-    //surfaceData.diffusionProfileHash = 0;
-   // surfaceData.subsurfaceMask = 0;
-
-    //surfaceData.thickness = 0;
-
-    // These static material feature allow compile time optimization
-    surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_STANDARD;
+    surfaceData.reflection = _Reflectivity;
 
 #ifdef _TANGENTMAP
     #ifdef _NORMALMAP_TANGENT_SPACE_IDX // Normal and tangent use same space

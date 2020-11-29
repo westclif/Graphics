@@ -29,9 +29,6 @@ namespace UnityEngine.Rendering.HighDefinition
         [GenerateHLSL(PackingRules.Exact, false, false, true, 1000)]
         public struct SurfaceData
         {
-            [SurfaceDataAttributes("Material Features")]
-            public uint materialFeatures;
-
             // Standard
             [MaterialSharedPropertyMapping(MaterialSharedProperty.Albedo)]
             [SurfaceDataAttributes("Base Color", false, true, FieldPrecision.Real)]
@@ -47,11 +44,12 @@ namespace UnityEngine.Rendering.HighDefinition
 
             [SurfaceDataAttributes("textureRampShading")]
             public uint textureRampShading;
-
             [SurfaceDataAttributes("textureRampSpecular")]
             public uint textureRampSpecular;
             [SurfaceDataAttributes("textureRampRim")]
             public uint textureRampRim;
+            [SurfaceDataAttributes("Reflection", precision = FieldPrecision.Real)]
+            public float reflection;
 
             // Forward property only
             [SurfaceDataAttributes(new string[] { "Geometric Normal", "Geometric Normal View Space" }, true, precision = FieldPrecision.Real, checkIsNormalized = true)]
@@ -80,12 +78,8 @@ namespace UnityEngine.Rendering.HighDefinition
         [GenerateHLSL(PackingRules.Exact, false, false, true, 1050)]
         public struct BSDFData
         {
-            public uint materialFeatures;
-
             [SurfaceDataAttributes("", false, true, FieldPrecision.Real)]
             public Vector3 diffuseColor;
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public Vector3 fresnel0;
 
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float ambientOcclusion; // Caution: This is accessible only if light layer is enabled, otherwise it is 1
@@ -93,20 +87,16 @@ namespace UnityEngine.Rendering.HighDefinition
             [SurfaceDataAttributes(new string[] { "Normal WS", "Normal View Space" }, true, checkIsNormalized: true)]
             public Vector3 normalWS;
 
-            // SSS
             public uint textureRampShading;
             public uint textureRampSpecular;
             public uint textureRampRim;
 
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public float reflection;
+
             // Anisotropic
             [SurfaceDataAttributes("", true)]
             public Vector3 tangentWS;
-            [SurfaceDataAttributes("", true)]
-            public Vector3 bitangentWS;
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float roughnessT;
-            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float roughnessB;
 
             // Forward property only
             [SurfaceDataAttributes(new string[] { "Geometric Normal", "Geometric Normal View Space" }, true, precision = FieldPrecision.Real, checkIsNormalized = true)]

@@ -163,14 +163,6 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
         //  2. Environment Reflection / Refraction
         //  3. Sky Reflection / Refraction
 
-        // Apply SSR.
-    #if (defined(_SURFACE_TYPE_TRANSPARENT) && !defined(_DISABLE_SSR_TRANSPARENT)) || (!defined(_SURFACE_TYPE_TRANSPARENT) && !defined(_DISABLE_SSR))
-        {
-            IndirectLighting indirect = EvaluateBSDF_ScreenSpaceReflection(posInput, preLightData, bsdfData,
-                                                                           reflectionHierarchyWeight);
-            AccumulateIndirectLighting(indirect, aggregateLighting);
-        }
-    #endif
 
         EnvLightData envLightData;
         if (envLightCount > 0)
@@ -186,6 +178,58 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
         {
             IndirectLighting lighting = EvaluateBSDF_ScreenspaceRefraction(context, V, posInput, preLightData, bsdfData, envLightData, refractionHierarchyWeight);
             AccumulateIndirectLighting(lighting, aggregateLighting);
+        }
+
+        // Reflection probes are sorted by volume (in the increasing order).
+        if (featureFlags & LIGHTFEATUREFLAGS_ENV)
+        {
+            context.sampleReflection = SINGLE_PASS_CONTEXT_SAMPLE_REFLECTION_PROBES;
+
+        #if SCALARIZE_LIGHT_LOOP
+            if (fastPath)
+            {
+                envLightStart = envStartFirstLane;
+            }
+        #endif
+
+            // Scalarized loop, same rationale of the punctual light version
+            uint v_envLightListOffset = 0;
+            uint v_envLightIdx = envLightStart;
+            while (v_envLightListOffset < envLightCount)
+            {
+                v_envLightIdx = FetchIndex(envLightStart, v_envLightListOffset);
+#if SCALARIZE_LIGHT_LOOP
+                uint s_envLightIdx = ScalarizeElementIndex(v_envLightIdx, fastPath);
+#else
+                uint s_envLightIdx = v_envLightIdx;
+#endif
+                if (s_envLightIdx == -1)
+                    break;
+
+                EnvLightData s_envLightData = FetchEnvLight(s_envLightIdx);    // Scalar load.
+
+                // If current scalar and vector light index match, we process the light. The v_envLightListOffset for current thread is increased.
+                // Note that the following should really be ==, however, since helper lanes are not considered by WaveActiveMin, such helper lanes could
+                // end up with a unique v_envLightIdx value that is smaller than s_envLightIdx hence being stuck in a loop. All the active lanes will not have this problem.
+                if (s_envLightIdx >= v_envLightIdx)
+                {
+                    v_envLightListOffset++;
+                    if (reflectionHierarchyWeight < 1.0)
+                    {
+                        EVALUATE_BSDF_ENV(s_envLightData, REFLECTION, reflection);
+                    }
+                    // Refraction probe and reflection probe will process exactly the same weight. It will be good for performance to be able to share this computation
+                    // However it is hard to deal with the fact that reflectionHierarchyWeight and refractionHierarchyWeight have not the same values, they are independent
+                    // The refraction probe is rarely used and happen only with sphere shape and high IOR. So we accept the slow path that use more simple code and
+                    // doesn't affect the performance of the reflection which is more important.
+                    // We reuse LIGHTFEATUREFLAGS_SSREFRACTION flag as refraction is mainly base on the screen. Would be a waste to not use screen and only cubemap.
+                    if ((featureFlags & LIGHTFEATUREFLAGS_SSREFRACTION) && (refractionHierarchyWeight < 1.0))
+                    {
+                        EVALUATE_BSDF_ENV(s_envLightData, REFRACTION, refraction);
+                    }
+                }
+
+            }
         }
 
         // Only apply the sky IBL if the sky texture is available
@@ -254,7 +298,7 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
 
     // Note: We can't apply the IndirectDiffuseMultiplier here as with GBuffer, Emissive is part of the bakeDiffuseLighting.
     // so IndirectDiffuseMultiplier is apply in PostInitBuiltinData or related location (like for probe volume)
-    aggregateLighting.indirect.specularReflected *= GetIndirectSpecularMultiplier(builtinData.renderingLayers);
+  //  aggregateLighting.indirect.specularReflected *= GetIndirectSpecularMultiplier(builtinData.renderingLayers);
 
     // Also Apply indiret diffuse (GI)
     // PostEvaluateBSDF will perform any operation wanted by the material and sum everything into diffuseLighting and specularLighting

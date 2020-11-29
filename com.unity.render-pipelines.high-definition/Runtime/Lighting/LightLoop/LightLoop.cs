@@ -3020,7 +3020,7 @@ namespace UnityEngine.Rendering.HighDefinition
             {
                 // We need to touch up the tile flags if we need material classification or, if disabled, to patch up for missing flags during the skipped light tile gen
                 bool needModifyingTileFeatures = !tileFlagsWritten || parameters.computeMaterialVariants;
-                if (needModifyingTileFeatures)
+                if (false)
                 {
                     int buildMaterialFlagsKernel = s_BuildMaterialFlagsWriteKernel;
                     parameters.buildMaterialFlagsShader.shaderKeywords = null;
@@ -3056,6 +3056,8 @@ namespace UnityEngine.Rendering.HighDefinition
                             baseFeatureFlags |= LightDefinitions.s_MaterialFeatureMaskFlags;
                         }
                     }
+
+                    baseFeatureFlags |= (uint)Lit.MaterialFeatureFlags.LitStandard;
 
                     var localLightListCB = parameters.lightListCB;
                     localLightListCB.g_BaseFeatureFlags = baseFeatureFlags;

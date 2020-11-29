@@ -1,6 +1,5 @@
 // Upgrade NOTE: replaced 'defined at' with 'defined (at)'
 
-
 #ifdef DEBUG_DISPLAY
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Debug/DebugDisplay.hlsl"
 #endif
@@ -16,33 +15,15 @@
 #if (SHADERPASS == SHADERPASS_FORWARD)
     #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/Lighting.hlsl"
 
-    // The light loop (or lighting architecture) is in charge to:
-    // - Define light list
-    // - Define the light loop
-    // - Setup the constant/data
-    // - Do the reflection hierarchy
-    // - Provide sampling function for shadowmap, ies, cookie and reflection (depends on the specific use with the light loops like index array or atlas or single and texture format (cubemap/latlong))
-
     #define HAS_LIGHTLOOP
 
     #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/LightLoop/LightLoopDef.hlsl"
-
-    #ifdef HDRP_MATERIAL_TYPE_SIMPLE
-        #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/SimpleLit.hlsl"
-        #define _DISABLE_SSR
-    #else
-        #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl"
-    #endif
-
-        #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/LightLoop/LightLoop.hlsl"
+    #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl"
+    #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/LightLoop/LightLoop.hlsl"
 
 #else // (SHADERPASS == SHADERPASS_FORWARD)
 
-    #ifdef HDRP_MATERIAL_TYPE_SIMPLE
-        #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/SimpleLit.hlsl"
-    #else
-        #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl"
-    #endif
+    #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl"
 #endif // (SHADERPASS == SHADERPASS_FORWARD)
 
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/BuiltinUtilities.hlsl"
@@ -124,25 +105,6 @@ SurfaceData VFXGetSurfaceData(const VFX_VARYING_PS_INPUTS i, float3 normalWS,con
     opacity = saturate(color.a);
     #endif
 
-    #if HDRP_MATERIAL_TYPE_STANDARD
-    surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_STANDARD;
-    #ifdef VFX_VARYING_METALLIC
-//    surfaceData.metallic = i.VFX_VARYING_METALLIC;
-    #endif
-    #elif HDRP_MATERIAL_TYPE_SPECULAR
-    surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_SPECULAR_COLOR;
-    #ifdef VFX_VARYING_SPECULAR
-    surfaceData.specularColor = saturate(i.VFX_VARYING_SPECULAR);
-    #endif
-    #elif HDRP_MATERIAL_TYPE_TRANSLUCENT
-    surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_TRANSMISSION;
-    #ifdef VFX_VARYING_THICKNESS
-    surfaceData.thickness = i.VFX_VARYING_THICKNESS * opacity;
-    #endif
-    surfaceData.diffusionProfileHash = diffusionProfileHash;
-    surfaceData.subsurfaceMask = 1.0f;
-    #endif
-
     surfaceData.normalWS = normalWS;
     #ifdef VFX_VARYING_SMOOTHNESS
    // surfaceData.perceptualSmoothness = i.VFX_VARYING_SMOOTHNESS;
@@ -158,6 +120,8 @@ SurfaceData VFXGetSurfaceData(const VFX_VARYING_PS_INPUTS i, float3 normalWS,con
     #endif
 
     surfaceData.textureRampShading = 3;
+    surfaceData.textureRampSpecular = 3;
+    surfaceData.textureRampRim = 0;
 
     return surfaceData;
 }

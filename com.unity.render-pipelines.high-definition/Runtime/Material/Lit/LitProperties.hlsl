@@ -25,6 +25,7 @@ float _ShadingToonRamp;
 float _SpecularToonRamp;
 float _RimToonRamp;
 float _Translucency;
+float _Reflectivity;
 
 float _AlphaCutoff;
 float4 _DoubleSidedConstants;
