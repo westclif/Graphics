@@ -362,8 +362,8 @@ void EncodeIntoGBuffer( SurfaceData surfaceData
     outGBuffer2.r =PackByte(surfaceData.textureRampShading);
     outGBuffer2.g =PackByte(surfaceData.textureRampSpecular);
     outGBuffer2.b =PackByte(surfaceData.textureRampRim);
-
-    outGBuffer2.a  = surfaceData.reflection;
+    outGBuffer2.a = 0;
+    outGBuffer1.a  = surfaceData.reflection;
 
 #ifdef DEBUG_DISPLAY
     if (_DebugLightingMode >= DEBUGLIGHTINGMODE_DIFFUSE_LIGHTING && _DebugLightingMode <= DEBUGLIGHTINGMODE_EMISSIVE_LIGHTING)
@@ -489,7 +489,7 @@ uint DecodeFromGBuffer(uint2 positionSS, uint tileFeatureFlags, out BSDFData bsd
     bsdfData.textureRampShading =UnpackByte(inGBuffer2.r);
     bsdfData.textureRampSpecular =UnpackByte(inGBuffer2.g);
     bsdfData.textureRampRim =UnpackByte(inGBuffer2.b);
-    bsdfData.reflection  = inGBuffer2.a;
+    bsdfData.reflection  = inGBuffer1.a;
     bsdfData.translucency = inGBuffer0.a;
 
     // Decompress feature-agnostic data from the G-Buffer.
@@ -728,8 +728,7 @@ IndirectLighting EvaluateBSDF_ScreenSpaceReflection(PositionInputs posInput,
 {
     IndirectLighting lighting;
     ZERO_INITIALIZE(IndirectLighting, lighting);
-    float4 ssrLighting = LOAD_TEXTURE2D_X(_SsrLightingTexture, posInput.positionSS);
-    float clampedNdotV = ClampNdotV(preLightData.NdotV);
+    float4 ssrLighting = LOAD_TEXTURE2D_X(_SsrLightingTexture, posInput.positionSS) * bsdfData.reflection;
     lighting.specularReflected = ssrLighting.rgb;
     reflectionHierarchyWeight  = ssrLighting.a;
     return lighting;

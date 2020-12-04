@@ -851,7 +851,7 @@ void VolumetricLighting(uint3 dispatchThreadId : SV_DispatchThreadID,
         // Convert it to distance along the ray. Doesn't work with tilt shift, etc.
         float linearDepth = LinearEyeDepth(deviceDepth, _ZBufferParams);
 
-        color = LOAD_TEXTURE2D_X(_GI, pixelCoord).rgb;
+      //  color = LOAD_TEXTURE2D_X(_GI, pixelCoord).rgb;
         // color += SampleSkyTexture(rayDirWS, 4.0, 0).rgb*55;
 
         ray.geomDist = linearDepth * rcp(dot(ray.jitterDirWS, F));

@@ -5,23 +5,19 @@
 // #pragma enable_d3d11_debug_symbols
 #pragma only_renderers d3d11 playstation xboxone vulkan metal switch
 
+//#define DEPTH_SOURCE_NOT_FROM_MIP_CHAIN
+
 #pragma kernel ScreenSpaceReflectionsTracing        SSR_TRACE
 #pragma kernel ScreenSpaceReflectionsReprojection   SSR_REPROJECT
 #pragma kernel ScreenSpaceReflectionsAccumulate     SSR_ACCUMULATE
 
 #pragma multi_compile _ DEPTH_SOURCE_NOT_FROM_MIP_CHAIN
-#pragma multi_compile _ SSR_APPROX
 
 // Tweak parameters.
 // #define DEBUG
 #define SSR_TRACE_BEHIND_OBJECTS
 #define SSR_TRACE_TOWARDS_EYE
-#ifndef SSR_APPROX
-    #define SAMPLES_VNDF
-#endif
 #define SSR_TRACE_EPS               0.00024414 // 2^-12, should be good up to 4K
-#define MIN_GGX_ROUGHNESS           0.00001f
-#define MAX_GGX_ROUGHNESS           0.99999f
 
 //--------------------------------------------------------------------------------------------------
 // Included headers
@@ -96,148 +92,10 @@ TEXTURE2D_X(_DepthTexture);
 // Simplified Weight for SSR where Fresnel == 1.0f
 float GetSSRSampleWeight(float3 V, float3 L, float roughness)
 {
-    // Simplification:
-    // float pdfNoGV = D_GGX(localH.z, roughness);
-    // value = F_Schlick(fresnel0, VdotH) * pdfNoGV / (lambdaVPlusOne + lambdaL);
-    // pdf = pdfNoGV / lambdaVPlusOne;
-    // weight = value / pdf;
-    //     fresnel == 1.0f
-
     const float lambdaVPlusOne = Lambda_GGX(roughness, V) + 1.0;
     const float lambdaL = Lambda_GGX(roughness, L);
 
     return lambdaVPlusOne / (lambdaVPlusOne + lambdaL);
-}
-
-// Adapted from: "Sampling the GGX Distribution of Visible Normals", by E. Heitz
-// http://jcgt.org/published/0007/04/01/paper.pdf
-void SampleGGXVisibleNormal(float2 u,
-                            float3 V,
-                            float3x3 localToWorld,
-                            float roughness,
-                        out float3 localV,
-                        out float3 localH,
-                        out float  VdotH)
-{
-    localV = mul(V, transpose(localToWorld));
-
-    // Construct an orthonormal basis around the stretched view direction
-    float3x3 viewToLocal;
-    viewToLocal[2] = normalize(float3(roughness * localV.x, roughness * localV.y, localV.z));
-    viewToLocal[0] = (viewToLocal[2].z < 0.9999) ? normalize(cross(float3(0, 0, 1), viewToLocal[2])) : float3(1, 0, 0);
-    viewToLocal[1] = cross(viewToLocal[2], viewToLocal[0]);
-
-    // Compute a sample point with polar coordinates (r, phi)
-    float r   = sqrt(u.x);
-    float phi = 2.0 * PI * u.y;
-    float t1  = r * cos(phi);
-    float t2  = r * sin(phi);
-    float s  = 0.5 * (1.0 + viewToLocal[2].z);
-    t2 = (1.0 - s) * sqrt(1.0 - t1 * t1) + s * t2;
-
-    // Reproject onto hemisphere
-    localH = t1 * viewToLocal[0] + t2 * viewToLocal[1] + sqrt(max(0.0, 1.0 - t1 * t1 - t2 * t2)) * viewToLocal[2];
-
-    // Transform the normal back to the ellipsoid configuration
-    localH = normalize(float3(roughness * localH.xy, max(0.0, localH.z)));
-
-    VdotH = saturate(dot(localV, localH));
-}
-
-// Specialization without Fresnel
-bool SampleGGX_VNDF(float roughness_,
-                    float3x3 localToWorld,
-                    float3 V,
-                    float2 inputSample,
-                out float3 outgoingDir,
-                out float weight)
-{
-    weight = 0.0f;
-
-    float roughness = clamp(roughness_, MIN_GGX_ROUGHNESS, MAX_GGX_ROUGHNESS);
-
-    float VdotH;
-    float3 localV, localH;
-    SampleGGXVisibleNormal(inputSample, V, localToWorld, roughness, localV, localH, VdotH);
-
-    // Compute the reflection direction
-    float3 localL = 2.0 * VdotH * localH - localV;
-    outgoingDir = mul(localL, localToWorld);
-
-    if (localL.z < 0.001)
-    {
-        return false;
-    }
-
-    weight = GetSSRSampleWeight(localV, localL, roughness);
-
-    if (weight < 0.001)
-        return false;
-
-    return true;
-}
-
-float PerceptualRoughnessFade(float perceptualRoughness, float fadeRcpLength, float fadeEndTimesRcpLength)
-{
-    float t = Remap10(perceptualRoughness, fadeRcpLength, fadeEndTimesRcpLength);
-    return Smoothstep01(t);
-}
-
-void GetHitInfos(uint2 positionSS, out float2 hitPositionNDC, out float srcPerceptualRoughness, out float3 positionWS, out float weight, out float3 N, out float3 L, out float3 V, out float NdotL, out float NdotH, out float VdotH, out float NdotV)
-{
-    float2 uv = float2(positionSS) * _RTHandleScale.xy;
-
-    hitPositionNDC = _SsrHitPointTexture[COORD_TEXTURE2D_X(positionSS)].xy;
-
-    float2 Xi;
-    Xi.x = GetBNDSequenceSample(positionSS, _FrameCount, 0);
-    Xi.y = GetBNDSequenceSample(positionSS, _FrameCount, 1);
-
-    NormalData normalData;
-    DecodeFromNormalBuffer(positionSS, normalData);
-
-    srcPerceptualRoughness = normalData.perceptualRoughness;
-
-    float roughness = PerceptualRoughnessToRoughness(normalData.perceptualRoughness);
-    float3x3 localToWorld = GetLocalFrame(normalData.normalWS);
-
-    Xi.x = lerp(Xi.x, 0.0f, srcPerceptualRoughness * 0.7f); // 0.7 is an arbitrary bias to reduce noise for high roughness
-
-#ifdef DEPTH_SOURCE_NOT_FROM_MIP_CHAIN
-    float  deviceDepth = LOAD_TEXTURE2D_X(_DepthTexture, positionSS).r;
-#else
-    float  deviceDepth = LOAD_TEXTURE2D_X(_CameraDepthTexture, positionSS).r;
-#endif
-
-    float2 positionNDC = positionSS * _ScreenSize.zw + (0.5 * _ScreenSize.zw);
-    positionWS = ComputeWorldSpacePosition(positionNDC, deviceDepth, UNITY_MATRIX_I_VP);
-    V = GetWorldSpaceNormalizeViewDir(positionWS);
-
-    N = normalData.normalWS;
-
-#ifdef SAMPLES_VNDF
-    float value;
-
-    SampleGGX_VNDF(roughness,
-        localToWorld,
-        V,
-        Xi,
-        L,
-        weight);
-
-    NdotV = dot(normalData.normalWS, V);
-    NdotL = dot(normalData.normalWS, L);
-    float3 H = normalize(V + L);
-    NdotH = dot(normalData.normalWS, H);
-    VdotH = dot(V, H);
-#else
-    SampleGGXDir(Xi, V, localToWorld, roughness, L, NdotL, NdotH, VdotH);
-
-    NdotV = dot(normalData.normalWS, V);
-    float Vg = V_SmithJointGGX(NdotL, NdotV, roughness);
-
-    weight = 4.0f * NdotL * VdotH * Vg / NdotH;
-#endif
 }
 
 float2 GetHitNDC(float2 positionNDC)
@@ -282,8 +140,7 @@ float3 GetHitColor(float2 hitPositionNDC, float perceptualRoughness, out float o
     float2 prevFrameNDC = GetHitNDC(hitPositionNDC);
     float2 prevFrameUV = prevFrameNDC * _ColorPyramidUvScaleAndLimitPrevFrame.xy;
 
-    float tmpCoef = PerceptualRoughnessFade(perceptualRoughness, _SsrRoughnessFadeRcpLength, _SsrRoughnessFadeEndTimesRcpLength);
-    opacity = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength) * tmpCoef;
+    opacity = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength);
     return SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, mipLevel).rgb;
 }
 
@@ -300,13 +157,8 @@ float2 GetSampleInfo(uint2 positionSS, out float3 color, out float weight, out f
     NormalData normalData;
     DecodeFromNormalBuffer(positionSS, normalData);
 
-    float roughness = PerceptualRoughnessToRoughness(normalData.perceptualRoughness);
-
-    roughness = clamp(roughness, MIN_GGX_ROUGHNESS, MAX_GGX_ROUGHNESS);
-
-    weight = GetSSRSampleWeight(V, L, roughness);
-
-    color = GetHitColor(hitData.xy, normalData.perceptualRoughness, opacity, 0);
+    weight = GetSSRSampleWeight(V, L, 0);
+    color = GetHitColor(hitData.xy, 0, opacity, 0);
 
     return hitData;
 }
@@ -317,8 +169,7 @@ void GetNormalAndPerceptualRoughness(uint2 positionSS, out float3 normalWS, out 
     NormalData normalData;
     DecodeFromNormalBuffer(positionSS, normalData);
     normalWS = normalData.normalWS;
-    float4 packedCoatMask = _SsrClearCoatMaskTexture[COORD_TEXTURE2D_X(positionSS)];
-    perceptualRoughness = 0.19f;
+    perceptualRoughness =  0;
 }
 
 void WriteDebugInfo(uint2 positionSS, float4 value)
@@ -377,7 +228,6 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
     float  deviceDepth = LOAD_TEXTURE2D_X(_CameraDepthTexture, positionSS).r;
 #endif
 
-#ifdef SSR_APPROX
     float2 positionNDC = positionSS * _ScreenSize.zw + (0.5 * _ScreenSize.zw); // Should we precompute the half-texel bias? We seem to use it a lot.
     float3 positionWS = ComputeWorldSpacePosition(positionNDC, deviceDepth, UNITY_MATRIX_I_VP); // Jittered
     float3 V = GetWorldSpaceNormalizeViewDir(positionWS);
@@ -387,21 +237,6 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
     GetNormalAndPerceptualRoughness(positionSS, N, perceptualRoughness);
 
     float3 R = reflect(-V, N);
-#else
-    float weight;
-    float NdotL, NdotH, VdotH, NdotV;
-    float3 R, V, N;
-    float3 positionWS;
-    float2 hitPositionNDC;
-    float perceptualRoughness;
-    GetHitInfos(positionSS, hitPositionNDC, perceptualRoughness, positionWS, weight, N, R, V, NdotL, NdotH, VdotH, NdotV);
-
-    if (NdotL < 0.001f || weight < 0.001f)
-    {
-        WriteDebugInfo(positionSS, -1);
-        return;
-    }
-#endif
 
     float3 camPosWS = GetCurrentViewPosition();
 
@@ -424,8 +259,8 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
     float3 reflPosSS  = float3(reflPosNDC.xy * _ScreenSize.xy, reflPosNDC.z);
     float3 rayDir     = reflPosSS - rayOrigin;
     float3 rcpRayDir  = rcp(rayDir);
-    int2   rayStep    = int2(rcpRayDir.x >= 0 ? 1 : 0,
-                             rcpRayDir.y >= 0 ? 1 : 0);
+    int2   rayStep    = int2(rcpRayDir.x >= 0 ? 5 : 0,
+                             rcpRayDir.y >= 0 ? 5 : 0);
     float3 raySign  = float3(rcpRayDir.x >= 0 ? 1 : -1,
                              rcpRayDir.y >= 0 ? 1 : -1,
                              rcpRayDir.z >= 0 ? 1 : -1);
@@ -593,8 +428,7 @@ void ScreenSpaceReflectionsReprojection(uint3 dispatchThreadId : SV_DispatchThre
     GetNormalAndPerceptualRoughness(positionSS0, N, perceptualRoughness);
 
     // Compute the actual roughness
-    float roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
-    roughness = clamp(roughness, MIN_GGX_ROUGHNESS, MAX_GGX_ROUGHNESS);
+    float roughness = 0;
 
     float2 hitPositionNDC = LOAD_TEXTURE2D_X(_SsrHitPointTexture, positionSS0).xy;
 
@@ -626,8 +460,7 @@ void ScreenSpaceReflectionsReprojection(uint3 dispatchThreadId : SV_DispatchThre
         // Off-Screen.
         return;
     }
-    float  opacity  = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength)
-                    * PerceptualRoughnessFade(perceptualRoughness, _SsrRoughnessFadeRcpLength, _SsrRoughnessFadeEndTimesRcpLength);
+    float  opacity  = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength);
 
 #ifdef SSR_APPROX
     // TODO: filtering is quite awful. Needs to be non-Gaussian, bilateral and anisotropic.
@@ -711,8 +544,7 @@ void ScreenSpaceReflectionsAccumulate(uint3 dispatchThreadId : SV_DispatchThread
     GetNormalAndPerceptualRoughness(positionSS, N, perceptualRoughness0);
 
     // Compute the actual roughness
-    float roughness = PerceptualRoughnessToRoughness(perceptualRoughness0);
-    roughness = clamp(roughness, MIN_GGX_ROUGHNESS, MAX_GGX_ROUGHNESS);
+    float roughness = 0;
 
     float4 data0 = _SSRAccumTexture[COORD_TEXTURE2D_X(int2(positionSS))];
 

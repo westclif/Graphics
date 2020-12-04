@@ -160,7 +160,7 @@ void GetSurfaceAndBuiltinData(inout FragInputs input, float3 V, inout PositionIn
 
 #ifdef _ALPHATEST_ON
 	ClipHoles(input.texCoord0.xy);
-#endif	
+#endif
 
     // terrain lightmap uvs are always taken from uv0
     input.texCoord1 = input.texCoord2 = input.texCoord0;
@@ -190,8 +190,8 @@ void GetSurfaceAndBuiltinData(inout FragInputs input, float3 V, inout PositionIn
     surfaceData.geomNormalWS = input.tangentToWorld[2];
 
     surfaceData.baseColor = terrainLitSurfaceData.albedo;
-    surfaceData.perceptualSmoothness = terrainLitSurfaceData.smoothness;
-    surfaceData.metallic = terrainLitSurfaceData.metallic;
+    surfaceData.perceptualSmoothness = 1;
+    surfaceData.metallic = 0;
     surfaceData.ambientOcclusion = terrainLitSurfaceData.ao;
 
     surfaceData.subsurfaceMask = 0;
