@@ -402,20 +402,6 @@ namespace UnityEngine.Rendering.HighDefinition
                     // convert to float
                     m_BlendParams.z = (float)affectFlags;
 
-                    m_ScalingBAndRemappingM = new Vector4(0.0f, m_Material.GetFloat("_DecalMaskMapBlueScale"), 0.0f, 0.0f);
-                    // If we have a texture, we use the remapping parameter, otherwise we use the regular one and the default texture is white
-                    if (m_Material.GetTexture("_MaskMap"))
-                    {
-                        m_RemappingAOS = new Vector4(m_Material.GetFloat("_AORemapMin"), m_Material.GetFloat("_AORemapMax"), m_Material.GetFloat("_SmoothnessRemapMin"), m_Material.GetFloat("_SmoothnessRemapMax"));
-                        m_ScalingBAndRemappingM.z = m_Material.GetFloat("_MetallicRemapMin");
-                        m_ScalingBAndRemappingM.w = m_Material.GetFloat("_MetallicRemapMax");
-                    }
-                    else
-                    {
-                        m_RemappingAOS = new Vector4(m_Material.GetFloat("_AO"), m_Material.GetFloat("_AO"), m_Material.GetFloat("_Smoothness"), m_Material.GetFloat("_Smoothness"));
-                        m_ScalingBAndRemappingM.z = m_Material.GetFloat("_Metallic");
-                    }
-
                     // For HDRP/Decal, pass are always present but can be enabled/disabled
                     m_cachedProjectorPassValue = -1;
                     if (m_Material.GetShaderPassEnabled(s_MaterialDecalPassNames[(int)MaterialDecalPass.DBufferProjector]))

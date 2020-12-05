@@ -7,53 +7,33 @@ Shader "HDRP/Decal"
         _NormalMap("NormalMap", 2D) = "bump" {}     // Tangent space normal map
         _MaskMap("MaskMap", 2D) = "white" {}
         _DecalBlend("_DecalBlend", Range(0.0, 1.0)) = 0.5
-		[HideInInspector] _NormalBlendSrc("_NormalBlendSrc", Float) = 0.0
-		[HideInInspector] _MaskBlendSrc("_MaskBlendSrc", Float) = 1.0
-		[HideInInspector] _DecalMeshDepthBias("_DecalMeshDepthBias", Float) = 0.0
-		[HideInInspector] _DrawOrder("_DrawOrder", Int) = 0
+		 _NormalBlendSrc("_NormalBlendSrc", Float) = 0.0
+		 _MaskBlendSrc("_MaskBlendSrc", Float) = 1.0
+		_DecalMeshDepthBias("_DecalMeshDepthBias", Float) = 0.0
+		_DrawOrder("_DrawOrder", Int) = 0
         [HDR] _EmissiveColor("EmissiveColor", Color) = (0, 0, 0)
-        // Used only to serialize the LDR and HDR emissive color in the material UI,
-        // in the shader only the _EmissiveColor should be used
-        [HideInInspector] _EmissiveColorLDR("EmissiveColor LDR", Color) = (0, 0, 0)
-        [HDR][HideInInspector] _EmissiveColorHDR("EmissiveColor HDR", Color) = (0, 0, 0)
         _EmissiveColorMap("EmissiveColorMap", 2D) = "white" {}
-        [HideInInspector] _EmissiveIntensityUnit("Emissive Mode", Int) = 0
-        [ToggleUI] _UseEmissiveIntensity("Use Emissive Intensity", Int) = 0
-        _EmissiveIntensity("Emissive Intensity", Float) = 1
-        _EmissiveExposureWeight("Emissive Pre Exposure", Range(0.0, 1.0)) = 1.0
-
-        // Remapping
-        [HideInInspector] _MetallicRemapMin("_MetallicRemapMin", Range(0.0, 1.0)) = 0.0
-        [HideInInspector] _MetallicRemapMax("_MetallicRemapMax", Range(0.0, 1.0)) = 1.0
-        [HideInInspector] _SmoothnessRemapMin("SmoothnessRemapMin", Float) = 0.0
-        [HideInInspector] _SmoothnessRemapMax("SmoothnessRemapMax", Float) = 1.0
-        [HideInInspector] _AORemapMin("AORemapMin", Float) = 0.0
-        [HideInInspector] _AORemapMax("AORemapMax", Float) = 1.0
 
         // scaling
-        [HideInInspector] _DecalMaskMapBlueScale("_DecalMaskMapBlueScale", Range(0.0, 1.0)) = 1.0
+        _DecalMaskMapBlueScale("_DecalMaskMapBlueScale", Range(0.0, 1.0)) = 1.0
 
-        // Alternative when no mask map is provided
-        [HideInInspector] _Smoothness("_Smoothness",  Range(0.0, 1.0)) = 0.5
-        [HideInInspector] _Metallic("_Metallic",  Range(0.0, 1.0)) = 0.0
-        [HideInInspector] _AO("_AO",  Range(0.0, 1.0)) = 1.0
 
-        [HideInInspector][ToggleUI]_AffectAlbedo("Boolean", Float) = 1
-        [HideInInspector][ToggleUI]_AffectNormal("Boolean", Float) = 1
-        [HideInInspector][ToggleUI]_AffectAO("Boolean", Float) = 0
-        [HideInInspector][ToggleUI]_AffectMetal("Boolean", Float) = 1
-        [HideInInspector][ToggleUI]_AffectSmoothness("Boolean", Float) = 1
-        [HideInInspector][ToggleUI]_AffectEmission("Boolean", Float) = 0
+        [ToggleUI]_AffectAlbedo("_AffectAlbedo", Float) = 1
+        [ToggleUI]_AffectNormal("_AffectNormal", Float) = 1
+        [ToggleUI]_AffectAO("_AffectAO", Float) = 0
+        [ToggleUI]_AffectMetal("_AffectMetal", Float) = 1
+        [ToggleUI]_AffectSmoothness("_AffectSmoothness", Float) = 1
+        [ToggleUI]_AffectEmission("_AffectEmission", Float) = 0
 
         // Stencil state
         [HideInInspector] _DecalStencilRef("_DecalStencilRef", Int) = 16
         [HideInInspector] _DecalStencilWriteMask("_DecalStencilWriteMask", Int) = 16
 
 		// Decal color masks
-        [HideInInspector]_DecalColorMask0("_DecalColorMask0", Int) = 0
-        [HideInInspector]_DecalColorMask1("_DecalColorMask1", Int) = 0
-		[HideInInspector]_DecalColorMask2("_DecalColorMask2", Int) = 0
-		[HideInInspector]_DecalColorMask3("_DecalColorMask3", Int) = 0
+        _DecalColorMask0("_DecalColorMask0", Int) = 32
+        _DecalColorMask1("_DecalColorMask1", Int) = 32
+		_DecalColorMask2("_DecalColorMask2", Int) = 32
+		_DecalColorMask3("_DecalColorMask3", Int) = 32
 
         // TODO: Remove when name garbage is solve (see IsHDRenderPipelineDecal)
         // This marker allow to identify that a Material is a HDRP/Decal
@@ -69,6 +49,12 @@ Shader "HDRP/Decal"
     //-------------------------------------------------------------------------------------
     // Variant
     //-------------------------------------------------------------------------------------
+
+    #define _MATERIAL_AFFECTS_ALBEDO
+    #define _COLORMAP
+    #define _NORMALMAP
+    #define _MATERIAL_AFFECTS_NORMAL
+
     #pragma shader_feature_local _COLORMAP
     #pragma shader_feature_local _MASKMAP
     #pragma shader_feature_local _NORMALMAP
@@ -287,7 +273,7 @@ Shader "HDRP/Decal"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Decal/ShaderPass/DecalSharePass.hlsl"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/PickingSpaceTransforms.hlsl"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/RenderPipeline/ShaderPass/ShaderPassDecal.hlsl"
-            
+
             #pragma editor_sync_compilation
 
             ENDHLSL

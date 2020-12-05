@@ -1,19 +1,5 @@
 float3 SampleSpecularBRDF(BSDFData bsdfData, float2 sample, float3 viewWS)
 {
-    float roughness = PerceptualRoughnessToRoughness(bsdfData.perceptualRoughness);
-    float3x3 localToWorld;
-    if (HasFlag(bsdfData.materialFeatures, MATERIALFEATUREFLAGS_LIT_ANISOTROPY))
-    {
-        localToWorld = float3x3(bsdfData.tangentWS, bsdfData.bitangentWS, bsdfData.normalWS);
-    }
-    else
-    {
-        localToWorld = GetLocalFrame(bsdfData.normalWS);
-    }
-    float NdotL, NdotH, VdotH;
-    float3 sampleDir;
-    SampleGGXDir(sample, viewWS, localToWorld, roughness, sampleDir, NdotL, NdotH, VdotH);
-    return sampleDir;
 }
 
 #ifdef HAS_LIGHTLOOP
@@ -48,7 +34,7 @@ IndirectLighting EvaluateBSDF_RaytracedRefraction(LightLoopContext lightLoopCont
 
 float RecursiveRenderingReflectionPerceptualSmoothness(BSDFData bsdfData)
 {
-    return PerceptualRoughnessToPerceptualSmoothness(bsdfData.perceptualRoughness);
+return 0;
 }
 
 #if HAS_REFRACTION

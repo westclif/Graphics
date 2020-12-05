@@ -231,18 +231,6 @@ void FillMaterialTransparencyData(float3 baseColor, float metallic, float ior, f
  //   bsdfData.thickness = max(thickness, 0.0001);
 }
 
-// This function is use to help with debugging and must be implemented by any lit material
-// Implementer must take into account what are the current override component and
-// adjust SurfaceData properties accordingdly
-void ApplyDebugToSurfaceData(float3x3 tangentToWorld, inout SurfaceData surfaceData)
-{
-}
-
-// This function is similar to ApplyDebugToSurfaceData but for BSDFData
-void ApplyDebugToBSDFData(inout BSDFData bsdfData)
-{
-}
-
 NormalData ConvertSurfaceDataToNormalData(SurfaceData surfaceData)
 {
     NormalData normalData;
@@ -302,8 +290,6 @@ BSDFData ConvertSurfaceDataToBSDFData(uint2 positionSS, SurfaceData surfaceData)
     #endif
                                  surfaceData.transmittanceMask, bsdfData);
 #endif
-
-    ApplyDebugToBSDFData(bsdfData);
 
     return bsdfData;
 }
@@ -584,6 +570,7 @@ PreLightData GetPreLightData(float3 V, PositionInputs posInput, inout BSDFData b
     preLightData.specularFGD = 1.0;
 
     preLightData.energyCompensation = 0.0;
+
 
     preLightData.partLambdaV = GetSmithJointGGXPartLambdaV(clampedNdotV, 1);
     preLightData.iblR = reflect(-V, bsdfData.normalWS);

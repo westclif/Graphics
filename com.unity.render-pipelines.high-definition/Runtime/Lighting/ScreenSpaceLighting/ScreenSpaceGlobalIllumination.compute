@@ -23,7 +23,7 @@
 #define INDIRECT_DIFFUSE_TILE_SIZE 8
 
 // Epslon value used for the computation
-#define GI_TRACE_EPS 4.00024414
+#define GI_TRACE_EPS 0.00024414
 
 // Input depth pyramid texture
 TEXTURE2D_X(_DepthTexture);
@@ -86,6 +86,7 @@ bool RayMarch(float3 positionWS, float3 sampleDir, float3 normalWS, float2 posit
         float3 raySign  = float3(rcpRayDir.x >= 0 ? 1 : -1,
                                  rcpRayDir.y >= 0 ? 1 : -1,
                                  rcpRayDir.z >= 0 ? 1 : -1);
+
         bool   rayTowardsEye  =  rcpRayDir.z >= 0;
 
         // Build the bounds that start at the center of the pixel and travel to the edge of the screen
@@ -127,14 +128,14 @@ bool RayMarch(float3 positionWS, float3 sampleDir, float3 normalWS, float2 posit
             // we need to bias the position by a small epsilon in the direction of the ray.
             float2 sgnEdgeDist = round(rayPos.xy) - rayPos.xy;
             float2 satEdgeDist = clamp(raySign.xy * sgnEdgeDist + GI_TRACE_EPS, 0, GI_TRACE_EPS);
-            rayPos.xy += raySign.xy * satEdgeDist;
+            rayPos.xy += raySign.xy* satEdgeDist;
 
             int2 mipCoord  = (int2)rayPos.xy >> mipLevel;
             // Bounds define 4 faces of a cube:
             // 2 walls in front of the ray, and a floor and a base below it.
             float4 bounds;
 
-            bounds.z  = LOAD_TEXTURE2D_X(_CameraDepthTexture, mipOffset + mipCoord).r;
+            bounds.z  = LOAD_TEXTURE2D_X(_DepthTexture, mipOffset + mipCoord).r;
             bounds.xy = (mipCoord + rayStep) << mipLevel;
 
             // We define the depth of the base as the depth value as:
@@ -176,13 +177,14 @@ bool RayMarch(float3 positionWS, float3 sampleDir, float3 normalWS, float2 posit
             // If we hit the floor, it's always safe to jump there.
             // If we are at (mipLevel != 0) and we are below the floor, we should not move.
             t = hitFloor ? distFloor : (((mipLevel != 0) && belowFloor) ? t : distWall);
+
             rayPos.z = bounds.z; // Retain the depth of the potential intersection
 
             // Warning: both rays towards the eye, and tracing behind objects has linear
             // rather than logarithmic complexity! This is due to the fact that we only store
             // the maximum value of depth, and not the min-max.
-            mipLevel += (hitFloor || belowFloor || rayTowardsEye) ? -1 : 1;
-            mipLevel  = clamp(mipLevel, 0, 6);
+            mipLevel += (hitFloor || belowFloor ) ? -1 : 1;
+          //  mipLevel  = clamp(mipLevel, 0, 6);
             mipOffset = _DepthPyramidMipLevelOffsets[mipLevel];
             // mipLevel = 0;
 
@@ -454,7 +456,7 @@ void CONVERT_YCOCG_TO_RGB(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 gr
     // We invert the tonemap
     color = color / (1 - color);
 
-
+    color *= 10;
     // Does this pixel recieve SSGI?
     //uint stencilValue = GetStencilValue(LOAD_TEXTURE2D_X(_StencilTexture, currentCoord));
     //if ((stencilValue & _SsrStencilBit) == 0)
@@ -466,11 +468,9 @@ void CONVERT_YCOCG_TO_RGB(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 gr
   //  cocgB.z *= pow(cocgB.z*4,2);
 
 
-    color *= 2.5 * (cocgB.z);
-    color *= 12.5 * (1-cocgB.z);
     float3 W = float3(0.2126729, 0.7151522, 0.0721750);
     float3 intensity = dot(color, W);
-    color = lerp(intensity, color, (1-cocgB.z) + (cocgB.z*3));
+     color = lerp(intensity, color, 0.4);
 
 
 

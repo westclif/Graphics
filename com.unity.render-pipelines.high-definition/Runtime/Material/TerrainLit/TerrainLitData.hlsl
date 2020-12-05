@@ -120,13 +120,8 @@ AttributesMesh ApplyMeshModification(AttributesMesh input, float3 timeParameters
 
 // We don't use emission for terrain
 #define _EmissiveColor float3(0,0,0)
-#define _AlbedoAffectEmissive 0
-#define _EmissiveExposureWeight 0
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/LitBuiltinData.hlsl"
 #undef _EmissiveColor
-#undef _AlbedoAffectEmissive
-#undef _EmissiveExposureWeight
-
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Decal/DecalUtilities.hlsl"
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/LitDecalData.hlsl"
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/TerrainLit/TerrainLitSurfaceData.hlsl"
@@ -189,23 +184,14 @@ void GetSurfaceAndBuiltinData(inout FragInputs input, float3 V, inout PositionIn
 
     surfaceData.geomNormalWS = input.tangentToWorld[2];
 
+    surfaceData.textureRampShading = 0;
+    surfaceData.textureRampSpecular = 0;
+    surfaceData.textureRampRim = 0;
+    surfaceData.reflection = 0;
+    surfaceData.translucency = 0;
+
     surfaceData.baseColor = terrainLitSurfaceData.albedo;
-    surfaceData.perceptualSmoothness = 1;
-    surfaceData.metallic = 0;
     surfaceData.ambientOcclusion = terrainLitSurfaceData.ao;
-
-    surfaceData.subsurfaceMask = 0;
-    surfaceData.thickness = 1;
-    surfaceData.diffusionProfileHash = 0;
-
-    surfaceData.materialFeatures = MATERIALFEATUREFLAGS_LIT_STANDARD;
-
-    // Init other parameters
-    surfaceData.anisotropy = 0.0;
-    surfaceData.specularColor = float3(0.0, 0.0, 0.0);
-    surfaceData.coatMask = 0.0;
-    surfaceData.iridescenceThickness = 0.0;
-    surfaceData.iridescenceMask = 0.0;
 
     // Transparency parameters
     // Use thickness from SSS
@@ -213,8 +199,6 @@ void GetSurfaceAndBuiltinData(inout FragInputs input, float3 V, inout PositionIn
     surfaceData.transmittanceColor = float3(1.0, 1.0, 1.0);
     surfaceData.atDistance = 1000000.0;
     surfaceData.transmittanceMask = 0.0;
-
-    surfaceData.specularOcclusion = 1.0; // This need to be init here to quiet the compiler in case of decal, but can be override later.
 
 #if HAVE_DECALS
     if (_EnableDecals)

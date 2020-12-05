@@ -530,12 +530,6 @@ float EvaluateLight_EnvIntersection(float3 positionWS, float3 normalWS, EnvLight
 // Call SampleEnv function with distance based roughness
 float4 SampleEnvWithDistanceBaseRoughness(LightLoopContext lightLoopContext, PositionInputs posInput, EnvLightData lightData, float3 R, float perceptualRoughness, float intersectionDistance, int sliceIdx = 0)
 {
-    // Only apply distance based roughness for non-sky reflection probe
-    if (lightLoopContext.sampleReflection == SINGLE_PASS_CONTEXT_SAMPLE_REFLECTION_PROBES && IsEnvIndexCubemap(lightData.envIndex))
-    {
-        perceptualRoughness = ComputeDistanceBaseRoughness(intersectionDistance, length(R), perceptualRoughness);
-    }
-
     return SampleEnv(lightLoopContext, lightData.envIndex, R, PerceptualRoughnessToMipmapLevel(perceptualRoughness) * lightData.roughReflections, lightData.rangeCompressionFactorCompensation, posInput.positionNDC, sliceIdx);
 }
 

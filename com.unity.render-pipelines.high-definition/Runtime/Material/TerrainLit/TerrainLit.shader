@@ -47,15 +47,11 @@ Shader "HDRP/TerrainLit"
     #pragma only_renderers d3d11 playstation xboxone vulkan metal switch
 
     // Terrain builtin keywords
-    #pragma shader_feature_local _TERRAIN_8_LAYERS
     #define _NORMALMAP
 
     #define _TERRAIN_BLEND_HEIGHT
     // Sample normal in pixel shader when doing instancing
     #define _TERRAIN_INSTANCED_PERPIXEL_NORMAL
-
-    #pragma shader_feature_local _DISABLE_DECALS
-    #pragma shader_feature_local _ADD_PRECOMPUTED_VELOCITY
 
     //enable GPU instancing support
     #pragma multi_compile_instancing
