@@ -207,41 +207,9 @@ SHADOW_TYPE EvaluateShadow_Directional( LightLoopContext lightLoopContext, Posit
 {
 #ifndef LIGHT_EVALUATION_NO_SHADOWS
     SHADOW_TYPE shadow  = 1.0;
-    float shadowMask    = 1.0;
-    float NdotL         = dot(N, -light.forward); // Disable contact shadow and shadow mask when facing away from light (i.e transmission)
-
-#ifdef SHADOWS_SHADOWMASK
-    // shadowMaskSelector.x is -1 if there is no shadow mask
-    // Note that we override shadow value (in case we don't have any dynamic shadow)
-    shadow = shadowMask = (light.shadowMaskSelector.x >= 0.0 && NdotL > 0.0) ? dot(BUILTIN_DATA_SHADOW_MASK, light.shadowMaskSelector) : 1.0;
-#endif
-
     if ((light.shadowIndex >= 0) && (light.shadowDimmer > 0))
     {
-        shadow = lightLoopContext.shadowValue;
-
-    #ifdef SHADOWS_SHADOWMASK
-        // TODO: Optimize this code! Currently it is a bit like brute force to get the last transistion and fade to shadow mask, but there is
-        // certainly more efficient to do
-        // We reuse the transition from the cascade system to fade between shadow mask at max distance
-        uint  payloadOffset;
-        real  fade;
-        int cascadeCount;
-        int shadowSplitIndex = 0;
-
-        shadowSplitIndex = EvalShadow_GetSplitIndex(lightLoopContext.shadowContext, light.shadowIndex, posInput.positionWS, fade, cascadeCount);
-
-        // we have a fade caclulation for each cascade but we must lerp with shadow mask only for the last one
-        // if shadowSplitIndex is -1 it mean we are outside cascade and should return 1.0 to use shadowmask: saturate(-shadowSplitIndex) return 0 for >= 0 and 1 for -1
-        fade = ((shadowSplitIndex + 1) == cascadeCount) ? fade : saturate(-shadowSplitIndex);
-
-        // In the transition code (both dithering and blend) we use shadow = lerp( shadow, 1.0, fade ) for last transition
-        // mean if we expend the code we have (shadow * (1 - fade) + fade). Here to make transition with shadow mask
-        // we will remove fade and add fade * shadowMask which mean we do a lerp with shadow mask
-        shadow = shadow - fade + fade * shadowMask;
-    #endif
-
-        shadow = lerp(shadowMask.SHADOW_TYPE_REPLICATE, shadow, light.shadowDimmer);
+        shadow = lerp(1, lightLoopContext.shadowValue, light.shadowDimmer);
     }
 
     return shadow;
@@ -375,36 +343,9 @@ SHADOW_TYPE EvaluateShadow_Punctual(LightLoopContext lightLoopContext, PositionI
 #ifndef LIGHT_EVALUATION_NO_SHADOWS
     float shadow        = 1.0;
     float shadowMask    = 1.0;
-    float NdotL         = dot(N, L); // Disable contact shadow and shadow mask when facing away from light (i.e transmission)
-
-#ifdef SHADOWS_SHADOWMASK
-    // shadowMaskSelector.x is -1 if there is no shadow mask
-    // Note that we override shadow value (in case we don't have any dynamic shadow)
-    shadow = shadowMask = (light.shadowMaskSelector.x >= 0.0 && NdotL > 0.0) ? dot(BUILTIN_DATA_SHADOW_MASK, light.shadowMaskSelector) : 1.0;
-#endif
-
-#if defined(SCREEN_SPACE_SHADOWS_ON) && !defined(_SURFACE_TYPE_TRANSPARENT)
-    if ((light.screenSpaceShadowIndex & SCREEN_SPACE_SHADOW_INDEX_MASK) != INVALID_SCREEN_SPACE_SHADOW)
-    {
-        shadow = GetScreenSpaceShadow(posInput, light.screenSpaceShadowIndex);
-    }
-    else
-#endif
     if ((light.shadowIndex >= 0) && (light.shadowDimmer > 0))
     {
         shadow = GetPunctualShadowAttenuation(lightLoopContext.shadowContext, posInput.positionSS, posInput.positionWS, N, light.shadowIndex, L, distances.x, light.lightType == GPULIGHTTYPE_POINT, light.lightType != GPULIGHTTYPE_PROJECTOR_BOX);
-
-#ifdef SHADOWS_SHADOWMASK
-        // Note: Legacy Unity have two shadow mask mode. ShadowMask (ShadowMask contain static objects shadow and ShadowMap contain only dynamic objects shadow, final result is the minimun of both value)
-        // and ShadowMask_Distance (ShadowMask contain static objects shadow and ShadowMap contain everything and is blend with ShadowMask based on distance (Global distance setup in QualitySettigns)).
-        // HDRenderPipeline change this behavior. Only ShadowMask mode is supported but we support both blend with distance AND minimun of both value. Distance is control by light.
-        // The following code do this.
-        // The min handle the case of having only dynamic objects in the ShadowMap
-        // The second case for blend with distance is handled with ShadowDimmer. ShadowDimmer is define manually and by shadowDistance by light.
-        // With distance, ShadowDimmer become one and only the ShadowMask appear, we get the blend with distance behavior.
-        shadow = light.nonLightMappedOnly ? min(shadowMask, shadow) : shadow;
-    #endif
-
         shadow = lerp(shadowMask, shadow, light.shadowDimmer);
     }
 

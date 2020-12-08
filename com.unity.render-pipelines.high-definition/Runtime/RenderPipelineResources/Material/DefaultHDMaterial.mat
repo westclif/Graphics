@@ -23,7 +23,7 @@ Material:
   m_Name: DefaultHDMaterial
   m_Shader: {fileID: 4800000, guid: e6dd5807a65249c4684d91f181b9b801, type: 3}
   m_ShaderKeywords: _COLORTYPE_FLAT _DISABLE_SSR _DISABLE_SSR_TRANSPARENT _MATERIAL_FEATURE_CLEAR_COAT
-    _NORMALMAP_TANGENT_SPACE
+    _NORMALMAP _NORMALMAP_TANGENT_SPACE
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -45,8 +45,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseColorMap:
-        m_Texture: {fileID: 2800000, guid: c01e5a5ef3d225e44b4b3335912a2ce1, type: 3}
-        m_Scale: {x: 70, y: 70}
+        m_Texture: {fileID: 2800000, guid: 2c5e04507b62a3048bd4711b36d9032a, type: 3}
+        m_Scale: {x: 60, y: 60}
         m_Offset: {x: 0, y: 0}
     - _BentNormalMap:
         m_Texture: {fileID: 0}
@@ -180,6 +180,7 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    m_Ints: []
     m_Floats:
     - _AORemapMax: 1
     - _AORemapMin: 0
@@ -198,6 +199,8 @@ Material:
     - _AlphaToMask: 0
     - _AlphaToMaskInspectorValue: 0
     - _Anisotropy: 0
+    - _BIPlanarNoiseEnable: 0
+    - _BiPlanarNoiseTiling: 1
     - _BlendMode: 0
     - _BumpScale: 1
     - _CoatCoverage: 1
@@ -269,6 +272,7 @@ Material:
     - _HorizonFade: 1
     - _IOR: 1.097
     - _InitialBend: 1
+    - _InteractiveObjectEnable: 0
     - _InvTilingScale: 1
     - _Ior: 1
     - _IridescenceMask: 1
@@ -293,12 +297,14 @@ Material:
     - _RayTracing: 0
     - _ReceivesSSR: 0
     - _ReceivesSSRTransparent: 0
+    - _Reflectivity: 0
     - _RefractionMode: 0
     - _RefractionModel: 0
     - _RimToonRamp: 0
     - _SSRefractionProjectionModel: 0
     - _SSSAndTransmissionType: 0
-    - _ShadingToonRamp: 3
+    - _ShadingToonRamp: 12
+    - _ShadowBias: 0
     - _ShiverDirectionality: 0.5
     - _ShiverDrag: 0.2
     - _Smoothness: 0
@@ -345,7 +351,7 @@ Material:
     - _UVEmissive: 0
     - _UVSec: 0
     - _UseEmissiveIntensity: 0
-    - _UseNormalMap: 0
+    - _UseNormalMap: 1
     - _UseShadowThreshold: 0
     - _ZTestDepthEqualForOpaque: 3
     - _ZTestGBuffer: 4
@@ -354,7 +360,7 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.46226418, g: 0.46226418, b: 0.46226418, a: 1}
+    - _BaseColor: {r: 0.22339393, g: 0.2924528, b: 0.15864186, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 0.51886785, g: 0.51886785, b: 0.51886785, a: 1}
     - _DiffusionProfileAsset: {r: -1.405437e+32, g: 2.0030989e-26, b: 0.00000006313206, a: -4.4045647e-18}
@@ -362,6 +368,7 @@ Material:
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
     - _EmissiveColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmissiveColorLDR: {r: 0, g: 0, b: 0, a: 1}
+    - _InteractiveObjectShineColor: {r: 0.75, g: 0.754, b: 0.75, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}
     - _IridescenceThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
@@ -384,5 +391,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_DiffusionProfileReferences:
-  - {fileID: 11400000, guid: 26bdddf49760c61438938733f07fa2a2, type: 2}
+  - {fileID: 0}
   m_MaterialReferences: []

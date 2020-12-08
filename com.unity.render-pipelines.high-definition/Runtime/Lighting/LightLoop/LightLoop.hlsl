@@ -39,26 +39,15 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
         if (_DirectionalShadowIndex >= 0)
         {
             DirectionalLightData light = _DirectionalLightDatas[_DirectionalShadowIndex];
+            // TODO: this will cause us to load from the normal buffer first. Does this cause a performance problem?
+            float3 L = -light.forward;
 
-#if defined(SCREEN_SPACE_SHADOWS_ON) && !defined(_SURFACE_TYPE_TRANSPARENT)
-            if ((light.screenSpaceShadowIndex & SCREEN_SPACE_SHADOW_INDEX_MASK) != INVALID_SCREEN_SPACE_SHADOW)
+            // Is it worth sampling the shadow map?
+            if ((light.lightDimmer > 0) && (light.shadowDimmer > 0))// Note: Volumetric can have different dimmer, thus why we test it here
             {
-                context.shadowValue = GetScreenSpaceColorShadow(posInput, light.screenSpaceShadowIndex).SHADOW_TYPE_SWIZZLE;
-            }
-            else
-#endif
-            {
-                // TODO: this will cause us to load from the normal buffer first. Does this cause a performance problem?
-                float3 L = -light.forward;
-
-                // Is it worth sampling the shadow map?
-                if ((light.lightDimmer > 0) && (light.shadowDimmer > 0) && // Note: Volumetric can have different dimmer, thus why we test it here
-                    IsNonZeroBSDF(V, L, preLightData, bsdfData))
-                {
-                    context.shadowValue = GetDirectionalShadowAttenuation(context.shadowContext,
-                                                                          posInput.positionSS, posInput.positionWS, GetNormalForShadowBias(bsdfData),
-                                                                          light.shadowIndex, L);
-                }
+                context.shadowValue = GetDirectionalShadowAttenuation(context.shadowContext,
+                                                                      posInput.positionSS, posInput.positionWS, GetNormalForShadowBias(bsdfData),
+                                                                      light.shadowIndex, L);
             }
         }
     }
