@@ -84,6 +84,26 @@ void GetLayerTexCoord(FragInputs input, inout LayerTexCoord layerTexCoord)
 
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/LitBuiltinData.hlsl"
 
+
+void clipBlueNoise(half2 pos, half alpha)
+{
+	float4x4 thresholdMatrix =
+	{ 1.0 / 17.0,  9.0 / 17.0,  3.0 / 17.0, 11.0 / 17.0,
+	  13.0 / 17.0,  5.0 / 17.0, 15.0 / 17.0,  7.0 / 17.0,
+	   4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0,
+	  16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0
+	};
+	float4x4 _RowAccess = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+	clip(alpha- thresholdMatrix[fmod(pos.x, 4)] * _RowAccess[fmod(pos.y, 4)]);
+}
+
+#if defined(_FADE_INFRONT_PLAYER)
+    uniform float4 _PlayerPosition;
+    uniform float4 _PlayerPositionVP;
+#endif
+
+float4 _ClippingMasks[4];
+
 void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs posInput, out SurfaceData surfaceData, out BuiltinData builtinData RAY_TRACING_OPTIONAL_PARAMETERS)
 {
 #ifdef _DOUBLESIDED_ON
@@ -92,7 +112,7 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     float3 doubleSidedConstants = float3(1.0, 1.0, 1.0);
 #endif
 
-    ApplyDoubleSidedFlipOrMirror(input, doubleSidedConstants); // Apply double sided flip on the vertex normal
+  //  ApplyDoubleSidedFlipOrMirror(input, doubleSidedConstants); // Apply double sided flip on the vertex normal
 
     LayerTexCoord layerTexCoord;
     ZERO_INITIALIZE(LayerTexCoord, layerTexCoord);
@@ -103,6 +123,22 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     float depthOffset = 0;
 #ifdef _DEPTHOFFSET_ON
     ApplyDepthOffsetPositionInput(V, depthOffset, GetViewForwardDir(), GetWorldToHClipMatrix(), posInput);
+#endif
+
+#if defined(_FADE_INFRONT_PLAYER)
+//TODO PAT dithering feature? can be disabled for items and alike?
+#if SHADERPASS != SHADERPASS_SHADOWS
+     float3 cameraRelativePlayerPos = GetCameraRelativePositionWS(_PlayerPosition.xyz);
+     float objdepth = LinearEyeDepth(cameraRelativePlayerPos, UNITY_MATRIX_V);
+  //    float3 viewSpace = TransformWorldToView(cameraRelativePlayerPos);
+//    output.positionCS = TransformWorldToHClip(positionRWS);
+//output.positionSS = input.positionCS; // input.positionCS is SV_Position
+//posInput.positionNDC *= invScreenSize;
+      float distance = length(posInput.positionSS.xy-(_PlayerPositionVP.xy*_ScreenSize.xy))*0.005;
+      distance *= distance;
+      distance =  max(distance,posInput.linearDepth - objdepth);
+      clipBlueNoise(posInput.positionSS.xy, distance);
+#endif
 #endif
 
 #if defined(_ALPHATEST_ON)
@@ -121,8 +157,6 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
 
     surfaceData.geomNormalWS = input.tangentToWorld[2];
 
-   // surfaceData.specularOcclusion = 1.0; // This need to be init here to quiet the compiler in case of decal, but can be override later.
-
 #if HAVE_DECALS
     if (_EnableDecals)
     {
@@ -136,6 +170,39 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
 
     // Caution: surfaceData must be fully initialize before calling GetBuiltinData
     GetBuiltinData(input, V, posInput, surfaceData, alpha, bentNormalWS, depthOffset, layerTexCoord.base, builtinData);
+
+#if SHADERPASS != SHADERPASS_SHADOWS
+ //   GENERIC_ALPHA_TEST(0,1);
+    //add polygon support?
+    //https://www.ronja-tutorials.com/2018/06/10/polygon-clipping.html
+
+    float clipColor = 0;
+    [unroll]
+    for(int i2 = 0; i2 < 4; i2++)
+    {
+        float4 ClippingMask = _ClippingMasks[i2];
+        float3 camerarelativPos = GetCameraRelativePositionWS(ClippingMask.xyz);
+        float2 clipRectStart = camerarelativPos.xz - ClippingMask.w;
+        float2 clipRectEnd = camerarelativPos.xz + ClippingMask.w;
+        float2 inside = step(clipRectStart, posInput.positionWS.xz) * step(posInput.positionWS.xz, clipRectEnd);
+        float isClipped = inside.x * inside.y;
+        clipColor += isClipped;
+       // if(clipColor >= 1)
+       //     break;
+    }
+  //  surfaceData.baseColor *= clipColor;
+  //  surfaceData.textureRampShading *= clipColor;
+  //  surfaceData.reflection *= clipColor;
+    #if defined(_FADE_BUILDING_ROOF)
+        float3 camerarelativPos = GetCameraRelativePositionWS(_ClippingMasks[0]);
+        float clipAlpha = 1-  step(camerarelativPos.y,posInput.positionWS.y) * clipColor;
+        clipBlueNoise(posInput.positionSS.xy, clipAlpha);
+    #endif
+#endif
+
+
+
+
 
 #ifdef _ALPHATEST_ON
     // Used for sharpening by alpha to mask
