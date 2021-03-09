@@ -10,63 +10,6 @@
 
 TEXTURE2D_ARRAY(_AO3400_RampArray);
 
-DirectLighting ShadeSurface_Infinitesimal(PreLightData preLightData, BSDFData bsdfData,
-                                          float3 V, float3 L, float3 lightColor,
-                                          float diffuseDimmer, float shadow)
-{
-    DirectLighting lighting;
-    ZERO_INITIALIZE(DirectLighting, lighting);
-
-    float NdotL = saturate(dot(bsdfData.normalWS, L)) * 0.5 + 0.5;
-    float3 h = normalize (L + V);
-    float nh = max (0, dot (bsdfData.normalWS, h));
-    float NdotV = dot(bsdfData.normalWS, V);
-
-
-    //translucency https://colinbarrebrisebois.com/2012/04/09/approximating-translucency-revisited-with-simplified-spherical-gaussian/
-    float fLTDistortion = 0.1; // fLTDistortion = Translucency Distortion Scale Factor
-    float fLTPower = (1.35-bsdfData.translucency) * 7.0; // fLTPower = Power Factor
-    float fLTScale =  3.0*bsdfData.translucency; // fLTScale = Scale Factor
-
-    half3 vLTLight = L + bsdfData.normalWS * fLTDistortion;
-  //  half fLTDot = pow(saturate(dot(V, -vLTLight)),fLTPower) * fLTScale;
-  //  lighting.diffuse += lightColor * fLTDot;
-
-
-  // lightColor *= SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(shadow,1),bsdfData.textureRampShading, 0.0).a;
-
-
-   // lightColor *=  diffuseDimmer;
-
-    float diffuseRim = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(NdotL,NdotL*NdotV),bsdfData.textureRampShading, 0.0).a;
-    float3 specular = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(pow (nh,  32),1),bsdfData.textureRampShading, 0.0).rgb;
-    float3 translucency = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(saturate(dot(V, -vLTLight)),0),bsdfData.textureRampShading, 0.0).rgb;
-
-
-   // float4 specRim = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(pow (nh,  32),1.0 - NdotV),bsdfData.textureRampShading, 0.0)
-   // float4 diffuseTranslucency = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(NdotL,saturate(dot(V, -vLTLight))),bsdfData.textureRampShading, 0.0)
-
-    lighting.diffuse = lightColor * (diffuseRim + translucency);
-    lighting.specular = specular;
-
-
-    lighting.specular = 0;
-    lighting.diffuse = lightColor;
-
-   // lighting.diffuse = lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(NdotL,0),bsdfData.textureRampShading, 0.0);
-   // lighting.specular = lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(pow (nh,  32),0),bsdfData.textureRampSpecular, 0.0);
-
-
-   // //rimlight
-   // lighting.diffuse += lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(1.0 - NdotV,0),bsdfData.textureRampRim, 0.0)*2;
-
-
-   //translucency
-   // lighting.diffuse += lightColor * SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(saturate(dot(V, -vLTLight)V,0),bsdfData.textureRampRim, 0.0)*2;
-
-    return lighting;
-}
-
 //-----------------------------------------------------------------------------
 // Directional lights
 //-----------------------------------------------------------------------------
@@ -89,7 +32,7 @@ DirectLighting ShadeSurface_Directional(LightLoopContext lightLoopContext,
         SHADOW_TYPE shadow = EvaluateShadow_Directional(lightLoopContext, posInput, light, builtinData, GetNormalForShadowBias(bsdfData));
         shadow = max(shadow,light.shadowTint.r); //add the tint brightness if we ever want to use this to not have to dark shadows
 
-        float NdotL = saturate(dot(bsdfData.normalWS, L)) * 0.5 + 0.5;
+        float NdotL = saturate(dot(bsdfData.normalWS, L))  * 0.5 + 0.5;
 
         NdotL *= shadow;
 
@@ -104,6 +47,7 @@ DirectLighting ShadeSurface_Directional(LightLoopContext lightLoopContext,
         half3 vLTLight = L + bsdfData.normalWS * fLTDistortion;
 
         float diffuseRim = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(NdotL, NdotV*NdotL),bsdfData.textureRampShading, 0.0).a;
+     //   diffuseRim = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(NdotL, NdotV*saturate(dot(V, -vLTLight))),bsdfData.textureRampShading, 0.0).a;
         float3 specular = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(pow (nh,  32),1),bsdfData.textureRampShading, 0.0).rgb;
         float3 translucency = SAMPLE_TEXTURE2D_ARRAY_LOD(_AO3400_RampArray, s_trilinear_clamp_sampler, float2(saturate(dot(V, -vLTLight)),0),bsdfData.textureRampShading, 0.0).rgb;
 

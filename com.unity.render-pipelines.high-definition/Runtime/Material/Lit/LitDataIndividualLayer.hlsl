@@ -55,10 +55,10 @@ float ADD_IDX(GetSurfaceData)(FragInputs input, LayerTexCoord layerTexCoord, out
     surfaceData.ambientOcclusion = 1.0;
 
     surfaceData.textureRampShading = _ShadingToonRamp;
-    surfaceData.textureRampSpecular = _SpecularToonRamp;
-    surfaceData.textureRampRim = _RimToonRamp;
+    surfaceData.lightWrapValue = _LightWrapValue;
+    surfaceData.notUsed1 = 0;
     surfaceData.reflection = _Reflectivity;
-    surfaceData.translucency = _Translucency;
+    surfaceData.notUsed2 = 0;
 
 #ifdef _TANGENTMAP
     #ifdef _NORMALMAP_TANGENT_SPACE_IDX // Normal and tangent use same space

@@ -185,10 +185,10 @@ void GetSurfaceAndBuiltinData(inout FragInputs input, float3 V, inout PositionIn
     surfaceData.geomNormalWS = input.tangentToWorld[2];
 
     surfaceData.textureRampShading = 0;
-    surfaceData.textureRampSpecular = 0;
-    surfaceData.textureRampRim = 0;
+    surfaceData.lightWrapValue = 0;
+    surfaceData.notUsed1 = 0;
     surfaceData.reflection = 0;
-    surfaceData.translucency = 0;
+    surfaceData.notUsed2 = 0;
 
     surfaceData.baseColor = terrainLitSurfaceData.albedo;
     surfaceData.ambientOcclusion = terrainLitSurfaceData.ao;

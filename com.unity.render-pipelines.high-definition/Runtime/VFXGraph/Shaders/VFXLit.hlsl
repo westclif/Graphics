@@ -120,8 +120,8 @@ SurfaceData VFXGetSurfaceData(const VFX_VARYING_PS_INPUTS i, float3 normalWS,con
     #endif
 
     surfaceData.textureRampShading = 3;
-    surfaceData.textureRampSpecular = 3;
-    surfaceData.textureRampRim = 0;
+    surfaceData.lightWrapValue = 0.5;
+    surfaceData.notUsed1 = 0;
 
     return surfaceData;
 }

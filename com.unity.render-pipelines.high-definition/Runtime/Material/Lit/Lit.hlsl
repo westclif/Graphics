@@ -268,7 +268,7 @@ BSDFData ConvertSurfaceDataToBSDFData(uint2 positionSS, SurfaceData surfaceData)
     bsdfData.diffuseColor = surfaceData.baseColor;
 
     bsdfData.textureRampShading = surfaceData.textureRampShading;
-	bsdfData.textureRampSpecular = surfaceData.textureRampSpecular;
+	bsdfData.lightWrapValue = surfaceData.lightWrapValue;
 
     // Note: we have ZERO_INITIALIZE the struct so bsdfData.anisotropy == 0.0
     // Note: DIFFUSION_PROFILE_NEUTRAL_ID is 0
@@ -338,16 +338,16 @@ void EncodeIntoGBuffer( SurfaceData surfaceData
 {
     // RT0 - 8:8:8:8 sRGB
     // Warning: the contents are later overwritten for Standard and SSS!
-    outGBuffer0 = float4(surfaceData.baseColor, surfaceData.translucency);
+    outGBuffer0 = float4(surfaceData.baseColor, PackByte(surfaceData.textureRampShading));
 
     // This encode normalWS and PerceptualSmoothness into GBuffer1
     EncodeIntoNormalBuffer(ConvertSurfaceDataToNormalData(surfaceData), outGBuffer1);
 
     // Ensure that surfaceData.coatMask is 0 if the feature is not enabled
     // Note: no need to store MATERIALFEATUREFLAGS_LIT_STANDARD, always present
-    outGBuffer2.r =PackByte(surfaceData.textureRampShading);
-    outGBuffer2.g =PackByte(surfaceData.textureRampSpecular);
-    outGBuffer2.b =PackByte(surfaceData.textureRampRim);
+    outGBuffer2.r =0;
+    outGBuffer2.g =surfaceData.lightWrapValue;
+    outGBuffer2.b =0;
     outGBuffer2.a = 0;
     outGBuffer1.a  = surfaceData.reflection;
 
@@ -472,11 +472,11 @@ uint DecodeFromGBuffer(uint2 positionSS, uint tileFeatureFlags, out BSDFData bsd
     builtinData.shadowMask3 = 1.0;
 #endif
 
-    bsdfData.textureRampShading =UnpackByte(inGBuffer2.r);
-    bsdfData.textureRampSpecular =UnpackByte(inGBuffer2.g);
-    bsdfData.textureRampRim =UnpackByte(inGBuffer2.b);
+    bsdfData.textureRampShading =UnpackByte(inGBuffer0.a);
+    bsdfData.lightWrapValue =inGBuffer2.g;
+    bsdfData.notUsed1 =0;
     bsdfData.reflection  = inGBuffer1.a;
-    bsdfData.translucency = inGBuffer0.a;
+    bsdfData.notUsed2 = 0;
 
     // Decompress feature-agnostic data from the G-Buffer.
     float3 baseColor = inGBuffer0.rgb;

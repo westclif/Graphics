@@ -44,14 +44,14 @@ namespace UnityEngine.Rendering.HighDefinition
 
             [SurfaceDataAttributes("textureRampShading")]
             public uint textureRampShading;
-            [SurfaceDataAttributes("textureRampSpecular")]
-            public uint textureRampSpecular;
-            [SurfaceDataAttributes("textureRampRim")]
-            public uint textureRampRim;
+            [SurfaceDataAttributes("lightWrapValue")]
+            public float lightWrapValue;
+            [SurfaceDataAttributes("notUsed1")]
+            public uint notUsed1;
             [SurfaceDataAttributes("Reflection", precision = FieldPrecision.Real)]
             public float reflection;
-            [SurfaceDataAttributes("Translucency", precision = FieldPrecision.Real)]
-            public float translucency;
+            [SurfaceDataAttributes("notUsed2", precision = FieldPrecision.Real)]
+            public float notUsed2;
 
             // Forward property only
             [SurfaceDataAttributes(new string[] { "Geometric Normal", "Geometric Normal View Space" }, true, precision = FieldPrecision.Real, checkIsNormalized = true)]
@@ -90,13 +90,13 @@ namespace UnityEngine.Rendering.HighDefinition
             public Vector3 normalWS;
 
             public uint textureRampShading;
-            public uint textureRampSpecular;
-            public uint textureRampRim;
+            public float lightWrapValue;
+            public uint notUsed1;
 
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float reflection;
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
-            public float translucency;
+            public float notUsed2;
 
             // Anisotropic
             [SurfaceDataAttributes("", true)]

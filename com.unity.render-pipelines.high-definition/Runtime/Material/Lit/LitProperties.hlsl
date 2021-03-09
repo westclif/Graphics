@@ -22,9 +22,9 @@ SAMPLER(sampler_NormalMap);
 CBUFFER_START(UnityPerMaterial)
 
 float _ShadingToonRamp;
-float _SpecularToonRamp;
-float _RimToonRamp;
-float _Translucency;
+float _LightWrapValue;
+//float _RimToonRamp;
+//float _Translucency;
 float _Reflectivity;
 
 float _AlphaCutoff;

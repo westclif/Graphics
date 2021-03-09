@@ -1,6 +1,8 @@
 #ifndef UNITY_LIGHT_EVALUATION_INCLUDED
 #define UNITY_LIGHT_EVALUATION_INCLUDED
 
+ #pragma warning (disable : 3571)
+
 // This files include various function uses to evaluate lights
 // use #define LIGHT_EVALUATION_NO_HEIGHT_FOG to disable Height fog attenuation evaluation
 // use #define LIGHT_EVALUATION_NO_COOKIE to disable cookie evaluation
