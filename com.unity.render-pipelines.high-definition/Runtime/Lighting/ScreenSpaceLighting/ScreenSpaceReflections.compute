@@ -88,16 +88,6 @@ TEXTURE2D_X(_DepthTexture);
 //--------------------------------------------------------------------------------------------------
 // Helpers
 //--------------------------------------------------------------------------------------------------
-
-// Simplified Weight for SSR where Fresnel == 1.0f
-float GetSSRSampleWeight(float3 V, float3 L, float roughness)
-{
-    const float lambdaVPlusOne = Lambda_GGX(roughness, V) + 1.0;
-    const float lambdaL = Lambda_GGX(roughness, L);
-
-    return lambdaVPlusOne / (lambdaVPlusOne + lambdaL);
-}
-
 float2 GetHitNDC(float2 positionNDC)
 {
     // TODO: it's important to account for occlusion/disocclusion to avoid artifacts in motion.
@@ -135,13 +125,13 @@ float2 GetWorldSpacePoint(uint2 positionSS, out float3 positionSrcWS, out float3
     return hitData.xy;
 }
 
-float3 GetHitColor(float2 hitPositionNDC, float perceptualRoughness, out float opacity, int mipLevel = 0)
+float3 GetHitColor(float2 hitPositionNDC, float perceptualRoughness, out float opacity)
 {
     float2 prevFrameNDC = GetHitNDC(hitPositionNDC);
     float2 prevFrameUV = prevFrameNDC * _ColorPyramidUvScaleAndLimitPrevFrame.xy;
 
     opacity = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength);
-    return SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, mipLevel).rgb;
+    return SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, 0).rgb;
 }
 
 float2 GetSampleInfo(uint2 positionSS, out float3 color, out float weight, out float opacity)
@@ -150,26 +140,21 @@ float2 GetSampleInfo(uint2 positionSS, out float3 color, out float weight, out f
     float3 positionDstWS;
     float2 hitData = GetWorldSpacePoint(positionSS, positionSrcWS, positionDstWS);
 
-    float3 V = GetWorldSpaceNormalizeViewDir(positionSrcWS);
-    float3 L = normalize(positionDstWS - positionSrcWS);
-    float3 H = normalize(V + L);
-
     NormalData normalData;
     DecodeFromNormalBuffer(positionSS, normalData);
 
-    weight = GetSSRSampleWeight(V, L, 0);
-    color = GetHitColor(hitData.xy, 0, opacity, 0);
+    weight = 1;
+    color = GetHitColor(hitData.xy, 0, opacity);
 
     return hitData;
 }
 
-void GetNormalAndPerceptualRoughness(uint2 positionSS, out float3 normalWS, out float perceptualRoughness)
+void GetNormalAndPerceptualRoughness(uint2 positionSS, out float3 normalWS)
 {
     // Load normal and perceptualRoughness.
     NormalData normalData;
     DecodeFromNormalBuffer(positionSS, normalData);
     normalWS = normalData.normalWS;
-    perceptualRoughness =  0;
 }
 
 void WriteDebugInfo(uint2 positionSS, float4 value)
@@ -233,8 +218,7 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
     float3 V = GetWorldSpaceNormalizeViewDir(positionWS);
 
     float3 N;
-    float perceptualRoughness;
-    GetNormalAndPerceptualRoughness(positionSS, N, perceptualRoughness);
+    GetNormalAndPerceptualRoughness(positionSS, N);
 
     float3 R = reflect(-V, N);
 
@@ -242,7 +226,7 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
 
     // Apply normal bias with the magnitude dependent on the distance from the camera.
     // Unfortunately, we only have access to the shading normal, which is less than ideal...
-    positionWS = camPosWS + (positionWS - camPosWS) * (1 - 0.001 * rcp(max(dot(N, V), FLT_EPS)));
+    positionWS = camPosWS + (positionWS - camPosWS) * (1 - 0.005 * rcp(max(dot(N, V), FLT_EPS)));
     deviceDepth = ComputeNormalizedDeviceCoordinatesWithZ(positionWS, UNITY_MATRIX_VP).z;
     bool killRay = deviceDepth == UNITY_RAW_FAR_CLIP_VALUE;
 
@@ -269,16 +253,16 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
     // Note that we don't need to store or read the perceptualRoughness value
     // if we mark stencil during the G-Buffer pass with pixels which should receive SSR,
     // and sample the color pyramid during the lighting pass.
-    killRay = killRay || (reflPosSS.z <= 0);
-    killRay = killRay || (dot(N, V) <= 0);
-    killRay = killRay || (perceptualRoughness > _SsrRoughnessFadeEnd);
+  //  killRay = killRay || (reflPosSS.z <= 0);
+  //  killRay = killRay || (dot(N, V) <= 0);
+    killRay = killRay;
 #ifndef SSR_TRACE_TOWARDS_EYE
     killRay = killRay || rayTowardsEye;
 #endif
 
     if (killRay)
     {
-        WriteDebugInfo(positionSS, -1);
+   //     WriteDebugInfo(positionSS, -1);
         return;
     }
 
@@ -292,7 +276,7 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
         bounds.x = (rcpRayDir.x >= 0) ? _ScreenSize.x - halfTexel : halfTexel;
         bounds.y = (rcpRayDir.y >= 0) ? _ScreenSize.y - halfTexel : halfTexel;
         // If we do not want to intersect the skybox, it is more efficient to not trace too far.
-        float maxDepth = (_SsrReflectsSky != 0) ? -0.00000024 : 0.00000024; // 2^-22
+        float maxDepth =  0.00000024; // 2^-22
         bounds.z = (rcpRayDir.z >= 0) ? 1 : maxDepth;
 
         float3 dist = bounds * rcpRayDir - (rayOrigin * rcpRayDir);
@@ -317,6 +301,7 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
     bool hit       = false;
     bool miss      = false;
     bool belowMip0 = false; // This value is set prior to entering the cell
+    float2 halfTexelBias = 0.5 * _ScreenSize.zw;
 
     while (!(hit || miss) && (t <= tMax) && (iterCount < _SsrIterLimit))
     {
@@ -354,13 +339,9 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
         // - above or exactly on the floor
         // - inside the floor (between the floor and the base)
         // - below the base
-    #if 0
-        bool belowFloor  = (raySign.z * (t - distFloor)) <  0;
-        bool aboveBase   = (raySign.z * (t - distBase )) >= 0;
-    #else
         bool belowFloor  = rayPos.z  < bounds.z;
         bool aboveBase   = rayPos.z >= bounds.w;
-    #endif
+
         bool insideFloor = belowFloor && aboveBase;
         bool hitFloor    = (t <= distFloor) && (distFloor <= distWall);
 
@@ -392,8 +373,6 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
         mipLevel += (hitFloor || belowFloor || rayTowardsEye) ? -1 : 1;
         mipLevel  = clamp(mipLevel, 0, maxMipLevel);
 
-        // mipLevel = 0;
-
         iterCount++;
     }
 
@@ -406,7 +385,7 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
         // Note that we are using 'rayPos' from the penultimate iteration, rather than
         // recompute it using the last value of 't', which would result in an overshoot.
         // It also needs to be precisely at the center of the pixel to avoid artifacts.
-        float2 hitPositionNDC = floor(rayPos.xy) * _ScreenSize.zw + (0.5 * _ScreenSize.zw); // Should we precompute the half-texel bias? We seem to use it a lot.
+        float2 hitPositionNDC = floor(rayPos.xy) * _ScreenSize.zw + halfTexelBias; // Should we precompute the half-texel bias? We seem to use it a lot.
         _SsrHitPointTexture[COORD_TEXTURE2D_X(positionSS)] = hitPositionNDC.xy;
     }
 
@@ -424,11 +403,7 @@ void ScreenSpaceReflectionsReprojection(uint3 dispatchThreadId : SV_DispatchThre
     const uint2 positionSS0 = dispatchThreadId.xy;
 
     float3 N;
-    float perceptualRoughness;
-    GetNormalAndPerceptualRoughness(positionSS0, N, perceptualRoughness);
-
-    // Compute the actual roughness
-    float roughness = 0;
+    GetNormalAndPerceptualRoughness(positionSS0, N);
 
     float2 hitPositionNDC = LOAD_TEXTURE2D_X(_SsrHitPointTexture, positionSS0).xy;
 
@@ -437,6 +412,7 @@ void ScreenSpaceReflectionsReprojection(uint3 dispatchThreadId : SV_DispatchThre
         // Miss.
         return;
     }
+
 
 #ifdef DEPTH_SOURCE_NOT_FROM_MIP_CHAIN
     float  depthOrigin = LOAD_TEXTURE2D_X(_DepthTexture, positionSS0.xy).r;
@@ -462,73 +438,21 @@ void ScreenSpaceReflectionsReprojection(uint3 dispatchThreadId : SV_DispatchThre
     }
     float  opacity  = EdgeOfScreenFade(prevFrameNDC, _SsrEdgeFadeRcpLength);
 
-#ifdef SSR_APPROX
+
     // TODO: filtering is quite awful. Needs to be non-Gaussian, bilateral and anisotropic.
-    float  mipLevel = lerp(0, _SsrColorPyramidMaxMip, perceptualRoughness);
+   // float  mipLevel = lerp(0, _SsrColorPyramidMaxMip, 0);
 
     // Note that the color pyramid uses it's own viewport scale, since it lives on the camera.
-    float3 color    = SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, mipLevel).rgb;
+    float3 color    = SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, 0).rgb;
 
     // Disable SSR for negative, infinite and NaN history values.
-    uint3 intCol   = asuint(color);
-    bool  isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
+   // uint3 intCol   = asuint(color);
+   // bool  isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
 
-    color   = isPosFin ? color   : 0;
-    opacity = isPosFin ? opacity : 0;
+    //color   = isPosFin ? color   : 0;
+   // opacity = isPosFin ? opacity : 0;
 
     _SSRAccumTexture[COORD_TEXTURE2D_X(positionSS0)] = float4(color, 1.0f) * opacity;
-#else
-    float3 color = 0.0f;
-
-    float4 accum = _SSRAccumTexture[COORD_TEXTURE2D_X(positionSS0)];
-
-#define BLOCK_SAMPLE_RADIUS 1
-    int samplesCount = 0;
-    float4 outputs = 0.0f;
-    float wAll = 0.0f;
-    for (int y = -BLOCK_SAMPLE_RADIUS; y <= BLOCK_SAMPLE_RADIUS; ++y)
-    {
-        for (int x = -BLOCK_SAMPLE_RADIUS; x <= BLOCK_SAMPLE_RADIUS; ++x)
-        {
-            if (abs(x) == abs(y) && abs(x) == 1)
-                continue;
-
-            uint2 positionSS = uint2(int2(positionSS0) + int2(x, y));
-
-            float3 color;
-            float opacity;
-            float weight;
-            float2 hitData = GetSampleInfo(positionSS, color, weight, opacity);
-            if (max(hitData.x, hitData.y) != 0.0f && opacity > 0.0f)
-            {
-                //// Note that the color pyramid uses it's own viewport scale, since it lives on the camera.
-                // Disable SSR for negative, infinite and NaN history values.
-                uint3 intCol   = asuint(color);
-                bool  isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
-
-                float2 prevFrameUV = hitData * _ColorPyramidUvScaleAndLimitPrevFrame.xy;
-
-                color   = isPosFin ? color : 0;
-
-                outputs += weight * float4(color, 1.0f);
-                wAll += weight;
-            }
-        }
-    }
-#undef BLOCK_SAMPLE_RADIUS
-
-    if (wAll > 0.0f)
-    {
-        uint3 intCol = asuint(outputs.rgb);
-        bool  isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
-
-        outputs.rgb = isPosFin ? outputs.rgb : 0;
-        opacity     = isPosFin ? opacity : 0;
-        wAll = isPosFin ? wAll : 0;
-
-        _SSRAccumTexture[COORD_TEXTURE2D_X(positionSS0)] = opacity * outputs / wAll;
-    }
-#endif
 }
 
 #elif defined(SSR_ACCUMULATE)
@@ -540,11 +464,7 @@ void ScreenSpaceReflectionsAccumulate(uint3 dispatchThreadId : SV_DispatchThread
     uint2 positionSS = dispatchThreadId.xy;
 
     float3 N;
-    float perceptualRoughness0;
-    GetNormalAndPerceptualRoughness(positionSS, N, perceptualRoughness0);
-
-    // Compute the actual roughness
-    float roughness = 0;
+    GetNormalAndPerceptualRoughness(positionSS, N);
 
     float4 data0 = _SSRAccumTexture[COORD_TEXTURE2D_X(int2(positionSS))];
 
