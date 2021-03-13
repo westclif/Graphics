@@ -253,8 +253,8 @@ void ScreenSpaceReflectionsTracing(uint3 groupId          : SV_GroupID,
     // Note that we don't need to store or read the perceptualRoughness value
     // if we mark stencil during the G-Buffer pass with pixels which should receive SSR,
     // and sample the color pyramid during the lighting pass.
-  //  killRay = killRay || (reflPosSS.z <= 0);
-  //  killRay = killRay || (dot(N, V) <= 0);
+    killRay = killRay || (reflPosSS.z <= 0);
+    killRay = killRay || (dot(N, V) <= 0);
     killRay = killRay;
 #ifndef SSR_TRACE_TOWARDS_EYE
     killRay = killRay || rayTowardsEye;
@@ -446,11 +446,11 @@ void ScreenSpaceReflectionsReprojection(uint3 dispatchThreadId : SV_DispatchThre
     float3 color    = SAMPLE_TEXTURE2D_X_LOD(_ColorPyramidTexture, s_trilinear_clamp_sampler, prevFrameUV, 0).rgb;
 
     // Disable SSR for negative, infinite and NaN history values.
-   // uint3 intCol   = asuint(color);
-   // bool  isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
+    uint3 intCol   = asuint(color);
+    bool  isPosFin = Max3(intCol.r, intCol.g, intCol.b) < 0x7F800000;
 
-    //color   = isPosFin ? color   : 0;
-   // opacity = isPosFin ? opacity : 0;
+    color   = isPosFin ? color   : 0;
+    opacity = isPosFin ? opacity : 0;
 
     _SSRAccumTexture[COORD_TEXTURE2D_X(positionSS0)] = float4(color, 1.0f) * opacity;
 }

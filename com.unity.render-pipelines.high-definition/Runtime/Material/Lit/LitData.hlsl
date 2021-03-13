@@ -87,14 +87,25 @@ void GetLayerTexCoord(FragInputs input, inout LayerTexCoord layerTexCoord)
 
 void clipBlueNoise(half2 pos, half alpha)
 {
-	float4x4 thresholdMatrix =
-	{ 1.0 / 17.0,  9.0 / 17.0,  3.0 / 17.0, 11.0 / 17.0,
-	  13.0 / 17.0,  5.0 / 17.0, 15.0 / 17.0,  7.0 / 17.0,
-	   4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0,
-	  16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0
-	};
-	float4x4 _RowAccess = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
-	clip(alpha- thresholdMatrix[fmod(pos.x, 4)] * _RowAccess[fmod(pos.y, 4)]);
+    //alpha = clamp(alpha,0,1);
+
+    uint taaFrameIndex = _TaaFrameInfo.z;
+    float sampleJitterAngle = InterleavedGradientNoise(pos, taaFrameIndex);
+    float2 sampleJitter = float2(sin(sampleJitterAngle), cos(sampleJitterAngle));
+
+    clip(alpha-sampleJitterAngle);
+
+
+    //pos += sampleJitterAngle.xx;
+
+//float4x4 thresholdMatrix =
+//{ 1.0 / 17.0,  9.0 / 17.0,  3.0 / 17.0, 11.0 / 17.0,
+//  13.0 / 17.0,  5.0 / 17.0, 15.0 / 17.0,  7.0 / 17.0,
+//   4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0,
+//  16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0
+//};
+//float4x4 _RowAccess = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+//clip(alpha- thresholdMatrix[fmod(pos.x + sampleJitter.x, 4)] * _RowAccess[fmod(pos.y +sampleJitter.y, 4)]);
 }
 
 #if defined(_FADE_INFRONT_PLAYER)
@@ -128,24 +139,22 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
 #if defined(_FADE_INFRONT_PLAYER)
 //TODO PAT dithering feature? can be disabled for items and alike?
 #if SHADERPASS != SHADERPASS_SHADOWS
-     float3 cameraRelativePlayerPos = GetCameraRelativePositionWS(_PlayerPosition.xyz);
-     float objdepth = LinearEyeDepth(cameraRelativePlayerPos, UNITY_MATRIX_V);
-  //    float3 viewSpace = TransformWorldToView(cameraRelativePlayerPos);
-//    output.positionCS = TransformWorldToHClip(positionRWS);
-//output.positionSS = input.positionCS; // input.positionCS is SV_Position
-//posInput.positionNDC *= invScreenSize;
-      float distance = length(posInput.positionSS.xy-(_PlayerPositionVP.xy*_ScreenSize.xy))*0.005;
-      distance *= distance;
-      distance =  max(distance,posInput.linearDepth - objdepth);
-      clipBlueNoise(posInput.positionSS.xy, distance);
+     float2 dirTreePlayer  = normalize(_PlayerPosition.xz - GetAbsolutePositionWS(posInput.positionWS).xz);
+      float2 dirPlayerCamera  = normalize(_PlayerPosition.xz - _WorldSpaceCameraPos.xz);
+      float alphaAngle = 1- dot(float3(dirTreePlayer,0), float3(dirPlayerCamera,0));
+      clipBlueNoise(posInput.positionSS.xy, alphaAngle*1.4);
 #endif
 #endif
 
 #if defined(_ALPHATEST_ON)
     float alphaValue = SAMPLE_UVMAPPING_TEXTURE2D(_BaseColorMap, sampler_BaseColorMap, layerTexCoord.base).a * _BaseColor.a;
     float alphaCutoff = _AlphaCutoff;
-    GENERIC_ALPHA_TEST(alphaValue, alphaCutoff);
+    clip(alphaValue - alphaCutoff);
+
+    //clipBlueNoise(posInput.positionSS.xy,0-alphaCutoff);
 #endif
+
+
 
     // We perform the conversion to world of the normalTS outside of the GetSurfaceData
     // so it allow us to correctly deal with detail normal map and optimize the code for the layered shaders
@@ -156,6 +165,7 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
     GetNormalWS(input, normalTS, surfaceData.normalWS, doubleSidedConstants);
 
     surfaceData.geomNormalWS = input.tangentToWorld[2];
+
 
 #if HAVE_DECALS
     if (_EnableDecals)
@@ -201,7 +211,24 @@ void GetSurfaceAndBuiltinData(FragInputs input, float3 V, inout PositionInputs p
 #endif
 
 
+#if defined(_FADE_INFRONT_PLAYER)
+//TransformWorldToObjectDir
+//TransformObjectToWorldDir
+//TransformWorldToView
 
+          //Hide faces looking away from the _Player
+//tangentToWorld
+
+        float3 dx = ddx(posInput.positionWS);
+	    float3 dy = ddy(posInput.positionWS);
+	    float3 normal = normalize(cross(dy, dx));
+
+        float normaldot = dot(V, normal);
+     //   normaldot = dot(V, GetViewForwardDir());
+       clipBlueNoise(posInput.positionSS.xy,  normaldot*3-1);
+
+     //  clip(normaldot - 0.6);
+#endif
 
 
 #ifdef _ALPHATEST_ON
